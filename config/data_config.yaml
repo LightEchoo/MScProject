@@ -1,0 +1,21 @@
+dg_config:
+  N: 10  # 节点数
+  T: 11000  # 总时间步数
+  T_train_val: 10000  # 训练和验证的时间步数
+  Train_ratio: 0.8  # 训练集占比
+  T_train: 8000 # 训练的时间步数
+  T_val: 2000  # 验证的时间步数
+  T_test: 1000  # 测试的时间步数
+  data_type: "ar1"  # 数据类型
+
+  load_data:
+    node_mean: 50.0  # 节点的load的初始值/均值的均值
+    node_var: 10.0  # 节点的load的初始值/均值的方差
+    node_iid_var: 1.0  # 节点的load值的iid方法的方差
+    node_theta: 0.9  # 节点的load值的ar1方法的自相关系数
+
+  latency:
+    mean: 0.0  # 延迟的均值
+    var: 0.0  # 延迟的方差
+    iid_var: 0.0  # 延迟的iid方法的方差
+    theta: 0.0  # 延迟的ar1方法的自相关系数

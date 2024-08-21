@@ -1,0 +1,6 @@
+data:
+  initial_data_path: "data_generation/load_data/"
+  generated_data_path: "data_generation/generated_data/"
+
+device: "cuda"  # 默认设备
+seed: 42  # 随机种子
