@@ -25,10 +25,10 @@ class DataGenerate:
         self.T = base_config.T
         self.T_train_val = base_config.T_train_val
         self.T_test = base_config.T_test
-        self.node_mean = data_gen_config.node_mean
-        self.node_var = data_gen_config.node_var
-        self.node_iid_var = data_gen_config.node_iid_var
-        self.node_theta = data_gen_config.node_theta
+        self.node_mean = data_gen_config.node_load_mean_mean
+        self.node_var = data_gen_config.node_load_mean_var
+        self.node_iid_var = data_gen_config.node_load_iid_var
+        self.node_theta = data_gen_config.node_load_ar1_theta
 
         # 初始化其他属性
         self.means_loads = self._generate_means()  # 生成节点的平均负载
