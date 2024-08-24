@@ -1,3 +1,6 @@
+path:
+  global_path: "E:/Study in the UK/Project/MScProject"  # 项目的根目录
+
 base:
   N: 10  # 节点数
   T: 11000  # 总时间步数
@@ -6,20 +9,48 @@ base:
   T_train: 8000 # 训练的时间步数
   T_val: 2000  # 验证的时间步数
   T_test: 1000  # 测试的时间步数
-#  data_type: "ar1"  # 数据类型
+  lambda: 0.5  # load和latency的权重, 0.5表示load的权重
 
 data_generation:
-  
   load_data:
     node_load_mean_mean: 50.0  # 节点的load的初始值/均值的均值
     node_load_mean_var: 10.0  # 节点的load的初始值/均值的方差
     node_load_iid_var: 5.0  # 节点的load值的iid方法的方差
     node_load_ar1_theta: 0.9  # 节点的load值的ar1方法的自相关系数
 
-  latency:
+  latency_data:
     node_latency_mean_mean: 30.0  # 节点的latency的初始值/均值的均值
     node_latency_mean_var: 10.0  # 节点的latency的初始值/均值的方差
     node_latency_ar1_theta: 0.9  # 节点的latency值的ar1方法的自相关系数
+
+  reward_parameters:
+    iid:
+      alpha_load_0: 40.0
+      alpha_latency_1: 0.041
+
+    ar1:
+      alpha_load_0: 40.0
+      alpha_latency_1: 0.041
+
+  reward_parameters_slider:
+    alpha_load_0:
+        value: 1.0
+        min: 0.001
+        max: 40.0
+        step: 0.01
+        description: 'alpha_load_0'
+    alpha_latency_0:
+        value: 1.0
+        min: 0.001
+        max: 6.0
+        step: 0.01
+        description: 'alpha_latency_0'
+    alpha_latency_1:
+        value: 0.5
+        min: 0.0001
+        max: 0.5
+        step: 0.001
+        description: 'alpha_latency_1'
 
 exp4:
   batch_size: 64  # Batch size
