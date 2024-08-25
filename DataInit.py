@@ -9,6 +9,23 @@ from omegaconf import DictConfig, OmegaConf
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 #%%
+# # 加载 config.yaml 文件
+# config = OmegaConf.load("config/config.yaml")
+# global_path = Path(config.path.global_path)
+# data_path = global_path / 'Data'
+# # 打印完整的配置内容
+# print(f'---------- Config Info ----------')
+# print(OmegaConf.to_yaml(config))
+# # 打印全局路径和数据路径
+# print(f'---------- Path Info ----------')
+# print(f'Global Path: {global_path}')
+# print(f'Data Path: {data_path}')
+#%%
+# load_iid = pd.read_csv(data_path/'load_iid_data.csv').values
+# load_ar1 = pd.read_csv(data_path/'load_ar1_data.csv').values
+# latency_iid = pd.read_csv(data_path/'latency_iid_data.csv').values
+# latency_ar1 = pd.read_csv(data_path/'latency_ar1_data.csv').values
+#%%
 class DataGenerator:
     def __init__(self, config: DictConfig, if_save: bool) -> None:
         """
@@ -55,7 +72,7 @@ class DataGenerator:
     def _generate_means(self, mean: float, var: float) -> np.ndarray:
         """
         生成节点的平均负载或延迟数据。
-        
+
         :return: 包含节点平均负载或延迟的 numpy 数组
         """
         return np.random.normal(mean, var, size=(self.N,))
@@ -156,9 +173,9 @@ class DataGenerator:
     def plot_combined_data(self, i: int) -> None:
         """
         Combines and plots the IID and AR1 data for load and latency for all nodes.
-        The histograms in the two right columns are only for the i-th node, 
+        The histograms in the two right columns are only for the i-th node,
         while the AR1 time series line plots include all nodes. The column order is rearranged.
-        
+
         Parameters:
         i (int): Index of the node to plot histograms for.
         """
@@ -215,7 +232,7 @@ class DataGenerator:
 
     def plot_comparison(self) -> None:
         """
-        绘制 self.means_loads, self.load_mean_iid, self.load_mean_ar1, 
+        绘制 self.means_loads, self.load_mean_iid, self.load_mean_ar1,
         self.means_latencies, self.latency_mean_iid, self.latency_mean_ar1 的对比图。
         其中，latency 的曲线使用虚线，means 的、iid 的、ar1 的要有对应相似的表现。
         """
@@ -240,6 +257,268 @@ class DataGenerator:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
+#%%
+class RewardDataCalculator:
+    def __init__(self, load_iid, latency_iid, load_ar1, latency_ar1: np.ndarray, reward_parameters, if_save=False):
+        self.load_iid = load_iid
+        self.latency_iid = latency_iid
+        self.load_ar1 = load_ar1
+        self.latency_ar1 = latency_ar1
+
+        # 保存reward_parameters_slider的相关参数到self
+        self.iid_alpha_load_0= reward_parameters.iid.alpha_load_0
+        self.iid_alpha_latency_1 = reward_parameters.iid.alpha_latency_1
+
+        self.ar1_alpha_load_0 = reward_parameters.ar1.alpha_load_0
+        self.ar1_alpha_latency_1 = reward_parameters.ar1.alpha_latency_1
+
+        # 计算reward数据
+        self.iid_load_reward_0 = self.calculate_reward(self.load_iid, 'load_0')
+        self.iid_load_reward_1 = self.calculate_reward(self.load_iid, 'load_1')
+        self.iid_latency_reward_1 = self.calculate_reward(self.latency_iid, 'latency_1')
+
+        self.ar1_load_reward_0 = self.calculate_reward(self.load_ar1, 'load_0')
+        self.ar1_load_reward_1 = self.calculate_reward(self.load_ar1, 'load_1')
+        self.ar1_latency_reward_1 = self.calculate_reward(self.latency_ar1, 'latency_1')
+
+        # 保存reward数据
+        if if_save:
+            self.save_reward_data()
+
+        # 打印reward数据信息
+        self.print_info()
+
+        # 绘制reward数据
+        self.plot_reward_data()
+
+    def calculate_reward(self, data: np.ndarray, method: str) -> np.ndarray:
+        if method == 'load_0':
+            return self.iid_alpha_load_0 / (1 + data)
+
+        elif method == 'load_1':
+            inverted_data = 1 / (1 + data)
+            normalized_data = (inverted_data - inverted_data.min(axis=0)) / (inverted_data.max(axis=0) - inverted_data.min(axis=0))
+            return normalized_data
+
+        elif method == 'latency_1':
+            return np.exp(-self.iid_alpha_latency_1 * data)
+        else:
+            raise ValueError(f"Unknown method: {method}")
+
+    def save_reward_data(self):
+        np.save(data_path/'iid_load_reward_0.npy', self.iid_load_reward_0)
+        np.save(data_path/'iid_load_reward_1.npy', self.iid_load_reward_1)
+        np.save(data_path/'iid_latency_reward_1.npy', self.iid_latency_reward_1)
+
+        np.save(data_path/'ar1_load_reward_0.npy', self.ar1_load_reward_0)
+        np.save(data_path/'ar1_load_reward_1.npy', self.ar1_load_reward_1)
+        np.save(data_path/'ar1_latency_reward_1.npy', self.ar1_latency_reward_1)
+
+    def print_info(self):
+        print(f"iid_load_reward_0.shape: {self.iid_load_reward_0.shape}")
+        print(f"iid_load_reward_1.shape: {self.iid_load_reward_1.shape}")
+        print(f"iid_latency_reward_1.shape: {self.iid_latency_reward_1.shape}")
+
+        print(f"ar1_load_reward_0.shape: {self.ar1_load_reward_0.shape}")
+        print(f"ar1_load_reward_1.shape: {self.ar1_load_reward_1.shape}")
+        print(f"ar1_latency_reward_1.shape: {self.ar1_latency_reward_1.shape}")
+
+    def plot_reward_data(self, start_node=0, end_node=2):
+        """
+        绘制指定节点范围的数据，包括折线图、均值图和直方图。
+
+        参数:
+        start_node (int): 要绘制的起始节点索引 (包含)。
+        end_node (int): 要绘制的结束节点索引 (包含)。
+        """
+        # 绘制10*3个输出数据的折线图、直方图、均值图
+        fig, axs = plt.subplots(10, 3, figsize=(18, 30))
+
+        datasets = [
+            ("Load IID Original", self.load_iid),
+            ("Load IID Reward 0", self.iid_load_reward_0),
+            ("Load IID Reward 1", self.iid_load_reward_1),
+            ("Latency IID Original", self.latency_iid),
+            ("Latency IID Reward 1", self.iid_latency_reward_1),
+            ("Load AR1 Original", self.load_ar1),
+            ("Load AR1 Reward 0", self.ar1_load_reward_0),
+            ("Load AR1 Reward 1", self.ar1_load_reward_1),
+            ("Latency AR1 Original", self.latency_ar1),
+            ("Latency AR1 Reward 1", self.ar1_latency_reward_1)
+        ]
+
+        for idx, (title, data) in enumerate(datasets):
+            self.plot_single_data(axs, data[start_node:end_node+1], data, row=idx, title=title, ylabel='Value', start_node=start_node)
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_single_data(self, axs, partial_data, full_data, row, title, ylabel, start_node):
+        """
+        绘制单组数据的折线图、均值图和直方图。
+
+        参数:
+        axs (ndarray): 子图的轴数组。
+        partial_data (ndarray): 要绘制的部分数据（指定节点范围）。
+        full_data (ndarray): 用于绘制均值图的完整数据。
+        row (int): 在子图中的行索引。
+        title (str): 图表的标题。
+        ylabel (str): Y轴的标签。
+        start_node (int): 要绘制的起始节点索引 (用于标记节点标签)。
+        """
+        # 绘制折线图
+        for i in range(partial_data.shape[0]):
+            axs[row, 0].plot(partial_data[i], label=f'Node {i + start_node}')
+        axs[row, 0].set_title(f"{title} - Selected Nodes")
+        axs[row, 0].set_xlabel('Time')
+        axs[row, 0].set_ylabel(ylabel)
+        axs[row, 0].legend()
+        axs[row, 0].grid(True)
+
+        # 绘制均值图 (使用全部节点)
+        mean_values = np.mean(full_data, axis=1)
+        axs[row, 1].plot(mean_values, marker='o', linestyle='-', color='b', label=f'Mean {ylabel} per Node')
+        axs[row, 1].set_title(f'{title} - Mean Values (All Nodes)')
+        axs[row, 1].set_xlabel('Node')
+        axs[row, 1].set_ylabel(f'Mean {ylabel}')
+        axs[row, 1].legend()
+        axs[row, 1].grid(True)
+
+        y_max = mean_values.max()
+        y_min = mean_values.min()
+        range_value = y_max - y_min
+
+        axs[row, 1].text(len(mean_values) - 1, (y_max + y_min) / 2,
+                         f'Range: {range_value:.3f}',
+                         ha='right', va='center', fontsize=10, color='red')
+        axs[row, 1].hlines([y_min, y_max], xmin=0, xmax=len(mean_values) - 1, colors='red', linestyles='--', label='Range')
+        axs[row, 1].legend()
+
+        # 绘制直方图
+        for i in range(partial_data.shape[0]):
+            axs[row, 2].hist(partial_data[i].flatten(), bins=30, alpha=0.2, label=f'Node {i + start_node}')
+        axs[row, 2].set_title(f'{title} - Histogram (Selected Nodes)')
+        axs[row, 2].set_xlabel(f'{ylabel} Value')
+        axs[row, 2].set_ylabel('Frequency')
+        axs[row, 2].legend()
+        axs[row, 2].grid(True)
+
+#%%
+class RewardDataManager:
+    def __init__(self, config: DictConfig) -> None:
+        self.config = config
+
+        # 加载数据
+        # iid 数据
+        self.iid_load = pd.read_csv(data_path / 'load_iid_data.csv').values
+        self.iid_load_reward_0 = np.load(data_path / 'iid_load_reward_0.npy')
+        self.iid_load_reward_1 = np.load(data_path / 'iid_load_reward_1.npy')
+        self.iid_latency = pd.read_csv(data_path / 'latency_iid_data.csv').values
+        self.iid_latency_reward_1 = np.load(data_path / 'iid_latency_reward_1.npy')
+
+        # ar1 数据
+        self.ar1_load = pd.read_csv(data_path / 'load_ar1_data.csv').values
+        self.ar1_load_reward_0 = np.load(data_path / 'ar1_load_reward_0.npy')
+        self.ar1_load_reward_1 = np.load(data_path / 'ar1_load_reward_1.npy')
+        self.ar1_latency = pd.read_csv(data_path / 'latency_ar1_data.csv').values
+        self.ar1_latency_reward_1 = np.load(data_path / 'ar1_latency_reward_1.npy')
+
+    def print_info(self):
+        print(f"---------- Reward Data Info ----------")
+        print(f"iid_load_original.shape: {self.iid_load.shape}")
+        print(f"iid_load_reward_0.shape: {self.iid_load_reward_0.shape}")
+        print(f"iid_load_reward_1.shape: {self.iid_load_reward_1.shape}")
+        print(f"iid_latency_original.shape: {self.iid_latency.shape}")
+        print(f"iid_latency_reward_1.shape: {self.iid_latency_reward_1.shape}")
+    
+        print(f"ar1_load_original.shape: {self.ar1_load.shape}")
+        print(f"ar1_load_reward_0.shape: {self.ar1_load_reward_0.shape}")
+        print(f"ar1_load_reward_1.shape: {self.ar1_load_reward_1.shape}")
+        print(f"ar1_latency_original.shape: {self.ar1_latency.shape}")
+        print(f"ar1_latency_reward_1.shape: {self.ar1_latency_reward_1.shape}")
+        print(f"--------------------------------------")
+    
+    def plot_reward_data(self, start_node=0, end_node=2):
+        """
+        绘制指定节点范围的数据，包括折线图、均值图和直方图。
+    
+        参数:
+        start_node (int): 要绘制的起始节点索引 (包含)。
+        end_node (int): 要绘制的结束节点索引 (包含)。
+        """
+        # 绘制10*3个输出数据的折线图、直方图、均值图
+        fig, axs = plt.subplots(10, 3, figsize=(18, 30))
+    
+        datasets = [
+            ("Load IID Original", self.iid_load),
+            ("Load IID Reward 0", self.iid_load_reward_0),
+            ("Load IID Reward 1", self.iid_load_reward_1),
+            ("Latency IID Original", self.iid_latency),
+            ("Latency IID Reward 1", self.iid_latency_reward_1),
+            ("Load AR1 Original", self.ar1_load),
+            ("Load AR1 Reward 0", self.ar1_load_reward_0),
+            ("Load AR1 Reward 1", self.ar1_load_reward_1),
+            ("Latency AR1 Original", self.ar1_latency),
+            ("Latency AR1 Reward 1", self.ar1_latency_reward_1)
+        ]
+    
+        for idx, (title, data) in enumerate(datasets):
+            self.plot_single_data(axs, data[start_node:end_node+1], data, row=idx, title=title, ylabel='Value', start_node=start_node)
+    
+        plt.tight_layout()
+        plt.show()
+    
+    def plot_single_data(self, axs, partial_data, full_data, row, title, ylabel, start_node):
+        """
+        绘制单组数据的折线图、均值图和直方图。
+    
+        参数:
+        axs (ndarray): 子图的轴数组。
+        partial_data (ndarray): 要绘制的部分数据（指定节点范围）。
+        full_data (ndarray): 用于绘制均值图的完整数据。
+        row (int): 在子图中的行索引。
+        title (str): 图表的标题。
+        ylabel (str): Y轴的标签。
+        start_node (int): 要绘制的起始节点索引 (用于标记节点标签)。
+        """
+        # 绘制折线图
+        for i in range(partial_data.shape[0]):
+            axs[row, 0].plot(partial_data[i], label=f'Node {i + start_node}')
+        axs[row, 0].set_title(f"{title} - Selected Nodes")
+        axs[row, 0].set_xlabel('Time')
+        axs[row, 0].set_ylabel(ylabel)
+        axs[row, 0].legend()
+        axs[row, 0].grid(True)
+    
+        # 绘制均值图 (使用全部节点)
+        mean_values = np.mean(full_data, axis=1)
+        axs[row, 1].plot(mean_values, marker='o', linestyle='-', color='b', label=f'Mean {ylabel} per Node')
+        axs[row, 1].set_title(f'{title} - Mean Values (All Nodes)')
+        axs[row, 1].set_xlabel('Node')
+        axs[row, 1].set_ylabel(f'Mean {ylabel}')
+        axs[row, 1].legend()
+        axs[row, 1].grid(True)
+    
+        y_max = mean_values.max()
+        y_min = mean_values.min()
+        range_value = y_max - y_min
+    
+        axs[row, 1].text(len(mean_values) - 1, (y_max + y_min) / 2,
+                         f'Range: {range_value:.3f}',
+                         ha='right', va='center', fontsize=10, color='red')
+        axs[row, 1].hlines([y_min, y_max], xmin=0, xmax=len(mean_values) - 1, colors='red', linestyles='--', label='Range')
+        axs[row, 1].legend()
+    
+        # 绘制直方图
+        for i in range(partial_data.shape[0]):
+            axs[row, 2].hist(partial_data[i].flatten(), bins=30, alpha=0.2, label=f'Node {i + start_node}')
+        axs[row, 2].set_title(f'{title} - Histogram (Selected Nodes)')
+        axs[row, 2].set_xlabel(f'{ylabel} Value')
+        axs[row, 2].set_ylabel('Frequency')
+        axs[row, 2].legend()
+        axs[row, 2].grid(True)
+
+
 #%%
 class DataManager:
     def __init__(self, config: DictConfig, data_type: str) -> None:
@@ -268,21 +547,24 @@ class DataManager:
         self.seq_length = exp4_config.seq_length
 
         # 加载数据
-        self.load_iid = pd.read_csv(data_path/'load_iid_data.csv').values
-        self.load_ar1 = pd.read_csv(data_path/'load_ar1_data.csv').values
-        self.latency_iid = pd.read_csv(data_path/'latency_iid_data.csv').values
-        self.latency_ar1 = pd.read_csv(data_path/'latency_ar1_data.csv').values
+        # iid 数据
+        self.iid_load = pd.read_csv(data_path / 'load_iid_data.csv').values
+        self.iid_latency = pd.read_csv(data_path / 'latency_iid_data.csv').values
+
+        # ar1 数据
+        self.ar1_load = pd.read_csv(data_path / 'load_ar1_data.csv').values
+        self.ar1_latency = pd.read_csv(data_path / 'latency_ar1_data.csv').values
 
         # 根据数据类型选择数据
         match self.data_type:
-            case 'load_iid':
-                self.data_np = self.load_iid
-            case 'load_ar1':
-                self.data_np = self.load_ar1
-            case 'latency_iid':
-                self.data_np = self.latency_iid
-            case 'latency_ar1':
-                self.data_np = self.latency_ar1
+            case 'iid_load':
+                self.data_np = self.iid_load
+            case 'ar1_load':
+                self.data_np = self.ar1_load
+            case 'iid_latency':
+                self.data_np = self.iid_latency
+            case 'ar1_latency':
+                self.data_np = self.ar1_latency
             case _:
                 raise ValueError(f"Unknown data_type: {self.data_type}")
 
@@ -327,7 +609,7 @@ class DataManager:
     def _create_sequences(self, data: np.ndarray, split_type: str) -> tuple[torch.Tensor, torch.Tensor]:
         """
         根据数据创建序列数据。
-        
+
         :param data: 输入的numpy数组数据
         :param split_type: 数据的切分类型（'train', 'val', 'train_val'）
         :return: 生成的输入序列张量和目标序列张量
@@ -372,12 +654,12 @@ class DataManager:
         print(f'T_train_val: {self.T_train_val}')
         print(f'T_test: {self.T_test}')
         print(f'seq_length: {self.seq_length}')
-        
+
         print(f'----------------- Data Info -----------------')
-        print(f'load_iid.shape: {self.load_iid.shape}')
-        print(f'load_ar1.shape: {self.load_ar1.shape}')
-        print(f'latency_iid.shape: {self.latency_iid.shape}')
-        print(f'latency_ar1.shape: {self.latency_ar1.shape}')
+        print(f'iid_load.shape: {self.iid_load.shape}')
+        print(f'ar1_load.shape: {self.ar1_load.shape}')
+        print(f'iid_latency.shape: {self.iid_latency.shape}')
+        print(f'ar1_latency.shape: {self.ar1_latency.shape}')
         print(f'data_np.shape: {self.data_np.shape}')
         print(f'data_tensor.shape: {self.data_tensor.shape}')
 
@@ -390,7 +672,7 @@ class DataManager:
         print('train_data_tensor.shape:', self.train_data_tensor.shape)
         print('val_data_tensor.shape:', self.val_data_tensor.shape)
         print('test_data_tensor.shape:', self.test_data_tensor.shape)
-        
+
         print(f'----------------- Sequence Info -----------------')
         print('train_val_x.shape:', self.train_val_x.shape)
         print('train_val_y.shape:', self.train_val_y.shape)
@@ -398,21 +680,21 @@ class DataManager:
         print('train_y.shape:', self.train_y.shape)
         print('val_x.shape:', self.val_x.shape)
         print('val_y.shape:', self.val_y.shape)
-        
+
         print(f'----------------- DataLoader Info -----------------')
         self.print_dataloader_info(self.train_val_dataloader, 'Train-Val')
         self.print_dataloader_info(self.train_dataloader, 'Train')
         self.print_dataloader_info(self.val_dataloader, 'Val')
-        
+
         print(f'----------------- Edge Index Info -----------------')
         print('edge_index_tensor.shape:', self.edge_index_tensor.shape)
-        
+
         print(f'===================== End Info =====================')
 
     def print_dataloader_info(self, dataloader: DataLoader, title: str) -> None:
         """
         打印 DataLoader 的信息。
-    
+
         :param dataloader: DataLoader 对象
         :param title: 信息标题
         """
@@ -462,7 +744,7 @@ def manage_and_save_data(config: DictConfig, data_type: str, plot_start_node: in
     生成数据，绘图，并保存数据管理对象。
 
     :param config: 配置对象
-    :param data_type: 数据类型，例如 'load_iid', 'load_ar1', 'latency_iid', 'latency_ar1'
+    :param data_type: 数据类型，例如 'iid_load', 'ar1_load', 'iid_latency', 'ar1_latency'
     :param data_path: 数据保存的路径
     :param plot_title: 绘图的标题
     """
@@ -493,31 +775,23 @@ if __name__ == '__main__':
     # 数据生成
     data_generate = DataGenerator(config, if_save=True)
 
+
+    load_iid = pd.read_csv(data_path / 'load_iid_data.csv').values
+    load_ar1 = pd.read_csv(data_path / 'load_ar1_data.csv').values
+    latency_iid = pd.read_csv(data_path / 'latency_iid_data.csv').values
+    latency_ar1 = pd.read_csv(data_path / 'latency_ar1_data.csv').values
+
+    # 计算reward数据
+    reward_data_calculator = RewardDataCalculator(load_iid, latency_iid, load_ar1, latency_ar1,
+                                                  config.data_generation.reward_parameters, if_save=True)
+
+    reward_data_manager = RewardDataManager(config)
+    with open(data_path/'reward_data_manager.pkl', 'wb') as f:
+        pickle.dump(reward_data_manager, f)
+
     # 数据管理
-    manage_and_save_data(config, 'load_iid', 0, 3, data_path)
-    manage_and_save_data(config, 'load_ar1', 0, 3, data_path)
-    manage_and_save_data(config, 'latency_iid', 0, 3, data_path)
-    manage_and_save_data(config, 'latency_ar1', 0, 3, data_path)
-    
-    
-    
-    # load_iid_data_manage = DataManager(config, 'load_iid')
-    # load_iid_data_manage.plot_range_data(load_iid_data_manage.data_np[:3, :], title='iid Data')
-    # with open(data_path/'load_iid_data_manage.pkl', 'wb') as f:
-    #     pickle.dump(load_iid_data_manage, f)
-    # 
-    # load_ar1_data_manage = DataManager(config, 'load_ar1')
-    # load_ar1_data_manage.plot_range_data(load_ar1_data_manage.data_np[:3, :], title='ar1 Data')
-    # with open(data_path/'load_ar1_data_manage.pkl', 'wb') as f:
-    #     pickle.dump(load_ar1_data_manage, f)
-    # 
-    # latency_iid_data_manage = DataManager(config, 'latency_iid')
-    # latency_iid_data_manage.plot_range_data(latency_iid_data_manage.data_np[:3, :], title='iid Data')
-    # with open(data_path/'latency_iid_data_manage.pkl', 'wb') as f:
-    #     pickle.dump(latency_iid_data_manage, f)
-    # 
-    # latency_ar1_data_manage = DataManager(config, 'latency_ar1')
-    # latency_ar1_data_manage.plot_range_data(latency_ar1_data_manage.data_np[:3, :], title='ar1 Data')
-    # with open(data_path/'latency_ar1_data_manage.pkl', 'wb') as f:
-    #     pickle.dump(latency_ar1_data_manage, f)
+    manage_and_save_data(config, 'iid_load', 0, 3, data_path)
+    manage_and_save_data(config, 'ar1_load', 0, 3, data_path)
+    manage_and_save_data(config, 'iid_latency', 0, 3, data_path)
+    manage_and_save_data(config, 'ar1_latency', 0, 3, data_path)
 #%%

@@ -9,7 +9,8 @@ base:
   T_train: 8000 # 训练的时间步数
   T_val: 2000  # 验证的时间步数
   T_test: 1000  # 测试的时间步数
-  lambda: 0.5  # load和latency的权重, 0.5表示load的权重
+  lambda_load: 0.5  # load和latency的权重, 0.5表示load的权重
+  top_k: [1, 2, 3, 4, 5]  # top-k 的值
 
 data_generation:
   load_data:
@@ -51,6 +52,87 @@ data_generation:
         max: 0.5
         step: 0.001
         description: 'alpha_latency_1'
+
+epsilon_greedy:
+#  epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # epsilon 的值，在动态调整图中不起作用
+  dynamic_plot:
+    epsilon_min: 0.001 # epsilon 的最小值
+    epsilon_max: 0.5 # epsilon 的最大值
+    epsilon_step: 0.01 # epsilon 的步长
+    epsilon_default_value: 0.1 # epsilon 的默认值
+
+  epsilon_vs_cumulative_regret:
+    epsilon_min: 0.0001 # epsilon 的最小值
+    epsilon_max: 0.2001 # epsilon 的最大值
+    epsilon_step: 0.0005 # epsilon 的步长
+
+adaptive_epsilon_greedy:
+#  init_epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # epsilon 的值，在动态调整图中不起作用
+#  min_epsilon: 0.05 # epsilon 的最小值，在动态调整图中不起作用
+  dynamic_plot:
+    init_epsilon_min: 0.001 # epsilon 的最小值
+    init_epsilon_max: 0.5 # epsilon 的最大值
+    init_epsilon_step: 0.01 # epsilon 的步长
+    init_epsilon_default_value: 0.1 # epsilon 的默认值
+
+    min_epsilon_min: 0.001 # 算法可以取到的 epsilon 的最小值的范围的最小值
+    min_epsilon_max: 0.1 # 算法可以取到的 epsilon 的最小值的范围的最大值
+    min_epsilon_step: 0.001 # 算法可以取到的 epsilon 的最小值的范围的步长
+    min_epsilon_default_value: 0.05 # 算法可以取到的 epsilon 的最小值的默认值
+
+  epsilon_vs_cumulative_regret:
+    epsilon_min: 0.0001 # epsilon 的最小值
+    epsilon_max: 0.2001 # epsilon 的最大值
+    epsilon_step: 0.0005 # epsilon 的步长
+    min_epsilon: 0.05 # 算法可以取到的 epsilon 的最小值
+
+dynamic_adaptive_epsilon_greedy:
+#  init_epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # epsilon 的值
+  min_epsilon: 0.05 # epsilon 的最小值
+  max_epsilon: 0.8 # epsilon 的最大值
+#  threshold: 0.25 # epsilon的变化阈值
+#  percentiles: 80 # 阈值选取的之前的单步遗憾的百分位数，表示有百分之多少的遗憾小于阈值，动态绘制时不起作用
+  dynamic_plot:
+    init_epsilon_min: 0.001 # epsilon 的最小值
+    init_epsilon_max: 0.5 # epsilon 的最大值
+    init_epsilon_step: 0.01 # epsilon 的步长
+    init_epsilon_default_value: 0.1 # epsilon 的默认值
+
+    percentiles_min: 50 # 阈值选取的之前的单步遗憾的百分位数的最小值
+    percentiles_max: 100 # 阈值选取的之前的单步遗憾的百分位数的最大值
+    percentiles_step: 1 # 阈值选取的之前的单步遗憾的百分位数的步长
+    percentiles_default_value: 80 # 阈值选取的之前的单步遗憾的百分位数的默认值
+
+  epsilon_vs_cumulative_regret:
+    epsilon_min: 0.0001 # epsilon 的最小值
+    epsilon_max: 0.2001 # epsilon 的最大值
+    epsilon_step: 0.0005 # epsilon 的步长
+    percentiles: 80 # 阈值选取的之前的单步遗憾的百分位数
+
+boltzmann:
+  dynamic_plot:
+    temperature_min: 0.01 # temperature 的最小值
+    temperature_max: 1.01 # temperature 的最大值
+    temperature_step: 0.001 # temperature 的步长
+    temperature_default_value: 0.01 # temperature 的默认值
+
+  temperature_vs_cumulative_regret:
+    temperature_min: 0.01 # temperature 的最小值
+    temperature_max: 1.01 # temperature 的最大值
+    temperature_step: 0.001 # temperature 的步长
+
+ucb:
+#  c: 1.5  # ucb 的参数
+  dynamic_plot:
+      c_min: 0.1 # ucb 的参数的最小值
+      c_max: 3.1 # ucb 的参数的最大值
+      c_step: 0.1 # ucb 的参数的步长
+      c_default_value: 1.5 # ucb 的参数的默认值
+
+  c_vs_cumulative_regret:
+      c_min: 0.1 # ucb 的参数的最小值
+      c_max: 3.1 # ucb 的参数的最大值
+      c_step: 0.1 # ucb 的参数的步长
 
 exp4:
   batch_size: 64  # Batch size
