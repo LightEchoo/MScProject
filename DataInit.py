@@ -8,6 +8,8 @@ import pickle
 from omegaconf import DictConfig, OmegaConf
 import torch
 from torch.utils.data import DataLoader, TensorDataset
+import scipy.stats as stats
+from tqdm import tqdm
 #%%
 class DataGenerator:
     def __init__(self, config: DictConfig, if_save: bool) -> None:
@@ -18,6 +20,7 @@ class DataGenerator:
         :param config: 配置文件，使用 omegaconf 加载的 DictConfig 对象
         """
         # 提取并保存配置项
+        self.config = config
         base_config = config.base
         data_gen_config = config.data_generation.load_data
         latency_gen_config = config.data_generation.latency_data
@@ -28,23 +31,23 @@ class DataGenerator:
         self.T_test = base_config.T_test
 
         self.node_load_mean_mean = data_gen_config.node_load_mean_mean
-        self.node_load_mean_var = data_gen_config.node_load_mean_std
-        self.node_load_iid_var = data_gen_config.node_load_iid_std
+        self.node_load_mean_std = data_gen_config.node_load_mean_std
+        self.node_load_iid_std = data_gen_config.node_load_iid_std
         self.node_load_ar1_theta = data_gen_config.node_load_ar1_theta
 
         self.node_latency_mean_mean = latency_gen_config.node_latency_mean_mean
-        self.node_latency_mean_var = latency_gen_config.node_latency_mean_std
+        self.node_latency_mean_std = latency_gen_config.node_latency_mean_std
         self.node_latency_ar1_theta = latency_gen_config.node_latency_ar1_theta
 
         # 初始化其他属性
-        self.means_loads = self._generate_means(self.node_load_mean_mean, self.node_load_mean_var)  # 生成节点的平均负载
-        self.load_iid, self.load_mean_iid = self._generate_iid_data(self.node_load_iid_var, self.means_loads)  # 生成iid数据
+        self.means_loads = self._generate_means(self.node_load_mean_mean, self.node_load_mean_std)  # 生成节点的平均负载
+        self.load_iid, self.load_mean_iid = self._generate_iid_data(self.node_load_iid_std, self.means_loads)  # 生成iid数据
         self.load_ar1, self.load_mean_ar1 = self._generate_ar1_data(self.node_load_ar1_theta, self.means_loads)  # 生成ar1数据
 
-        self.means_latencies = self._generate_means(self.node_latency_mean_mean, self.node_latency_mean_var)  # 生成节点的平均延迟
+        self.means_latencies = self._generate_means(self.node_latency_mean_mean, self.node_latency_mean_std)  # 生成节点的平均延迟
         self.latency_iid, self.latency_mean_iid = self._generate_iid_data(self.node_latency_mean_mean, self.means_latencies, data_type='latency')  # 生成iid延迟数据
         self.latency_ar1, self.latency_mean_ar1 = self._generate_ar1_data(self.node_latency_ar1_theta, self.means_latencies, data_type='latency')  # 生成ar1延迟数据
-
+        
         # 保存数据并打印信息
         self._save_data() if if_save else None
         self.print_data_generate_info()
@@ -52,15 +55,187 @@ class DataGenerator:
         self.plot_combined_data(0)
         self.plot_comparison()
 
-    def _generate_means(self, mean: float, var: float) -> np.ndarray:
+        # 初始化最佳alpha值
+        self.best_iid_alpha_load_0 = None
+        self.best_iid_alpha_latency_1 = None
+        self.best_ar1_alpha_load_0 = None
+        self.best_ar1_alpha_latency_1 = None
+        
+        # 初始化要放到配置文件中的最佳alpha值
+        self.config_best_iid_alpha_load_0 = None
+        self.config_best_iid_alpha_latency_1 = None
+        self.config_best_ar1_alpha_load_0 = None
+        self.config_best_ar1_alpha_latency_1 = None
+        
+        # 计算最佳alpha值
+        self.calculate_best_alpha()
+        # 更新配置文件
+        # self.update_config_with_best_alphas()
+        
+    def calculate_best_alpha(self) -> None:
+        # 计算最佳的alpha值
+        max_iid_load = np.max(self.load_iid)
+        self.best_iid_alpha_load_0 = 1 + max_iid_load - 1e-3  # 动态计算load_reward_0的最佳alpha值，减去一个小值以增强稳定性
+        # iid_aloha_load_1 没有alpha值，因为它是归一化的
+        # iid_alpha_latency_0 也没有实际使用，因此不需要计算
+        # iid_alpha_latency_1 在函数search_and_plot_best_latency_reward_1_alpha中计算
+
+        max_ar1_load = np.max(self.load_ar1)
+        self.best_ar1_alpha_load_0 = 1 + max_ar1_load - 1e-3  # 动态计算load_reward_0的最佳alpha值，减去一个小值以增强稳定性
+        # ar1_aloha_load_1 没有alpha值，因为它是归一化的
+        # ar1_alpha_latency_0 也没有实际使用，因此不需要计算
+        # ar1_alpha_latency_1 在函数search_and_plot_best_latency_reward_1_alpha中计算
+
+        self.best_iid_alpha_latency_1, self.best_ar1_alpha_latency_1 =self.search_and_plot_best_latency_reward_1_alpha(self.latency_iid, self.latency_ar1)
+        # self.search_and_plot_best_latency_reward_1_alpha(self.latency_iid, self.latency_ar1)
+
+        self.config_best_iid_alpha_load_0 = float(round(self.best_iid_alpha_load_0, 3))
+        self.config_best_iid_alpha_latency_1 = float(round(self.best_iid_alpha_latency_1, 3))
+        self.config_best_ar1_alpha_load_0 = float(round(self.best_ar1_alpha_load_0, 3))
+        self.config_best_ar1_alpha_latency_1 = float(round(self.best_ar1_alpha_latency_1, 3))
+        # print(f"最佳的 iid_alpha_load_0: {self.config_best_iid_alpha_load_0}")
+        print(f"最佳的 iid_alpha_latency_1: {self.config_best_iid_alpha_latency_1}")
+        # print(f"最佳的 ar1_alpha_load_0: {self.config_best_ar1_alpha_load_0}")
+        print(f"最佳的 ar1_alpha_latency_1: {self.config_best_ar1_alpha_latency_1}")
+
+    def update_config_with_best_alphas(self):
+        # 将 alpha 值限制在小数点后三位并更新配置中的值
+        # 创建一个新的字典，只包含更新的值
+        updated_values = DictConfig({
+            "reward_parameters": {
+                "iid": {
+                    "alpha_load_0": self.config_best_iid_alpha_load_0,
+                    "alpha_latency_1": self.config_best_iid_alpha_latency_1,
+                },
+                "ar1": {
+                    "alpha_load_0": self.config_best_ar1_alpha_load_0,
+                    "alpha_latency_1": self.config_best_ar1_alpha_latency_1,
+                }
+            }
+        })
+
+        # 加载原始配置文件
+        original_config = OmegaConf.load("config/config.yaml")
+
+        # 只更新特定值
+        OmegaConf.merge(original_config, updated_values)
+
+        # 保存配置回文件
+        OmegaConf.save(config=original_config, f="config/config.yaml")
+        
+
+    def calculate_kl_divergence(self, y, x):
+        # 计算拟合的 lambda 值
+        fitted_lambda = 1 / np.mean(y)
+        
+        # 计算 PDF 并检查其有效性
+        pdf_values = stats.expon.pdf(x, scale=1/fitted_lambda)
+        if not np.all(np.isfinite(pdf_values)):
+            raise ValueError("The computed PDF contains invalid values (NaN or Inf).")
+
+        # 如果 pdf_values 中有无效值，将其替换为一个小的正数，以避免后续计算中的问题
+        pdf_values = np.where(np.isfinite(pdf_values) & (pdf_values > 0), pdf_values, 1e-10)
+    
+        # 计算 KL 散度
+        kl_divergence = stats.entropy(y, pdf_values)
+        return kl_divergence
+    
+    def calculate_entropy(self, y):
+        probabilities = y / np.sum(y)
+        probabilities = probabilities[probabilities > 0]
+        entropy = -np.sum(probabilities * np.log(probabilities))
+        return entropy
+    
+    def calculate_std_dev(self, y):
+        return np.std(y)
+    
+    def search_and_plot_best_latency_reward_1_alpha(self, latency_data_iid: np.ndarray, latency_data_ar1: np.ndarray) -> tuple[float, float]:
+        """
+        计算不同的度量方法（KL散度、信息熵、标准差）下的最佳alpha值，并绘制相关分布图。
+        
+        参数:
+        - latency_data_iid: iid延迟数据的二维数组
+        - latency_data_ar1: ar1延迟数据的二维数组
+        
+        返回:
+        - iid_latency_alpha_kl: iid延迟数据的KL散度最佳alpha值, 可以认为是iid_reward_1的最佳alpha值
+        - ar1_latency_alpha_std: ar1延迟数据的标准差最佳alpha值，可以认为是ar1_reward_1的最佳alpha值
+        """
+    
+        def find_best_alpha(latency_data: np.ndarray, metric: str):
+            max_node_index = np.argmax(np.max(latency_data, axis=1))
+            max_node_values = latency_data[max_node_index, :]
+    
+            x = max_node_values
+            alphas = np.around(np.arange(0.001, 1.001, step=0.0001), decimals=3)
+            best_alpha = None
+            best_metric_value = float('-inf') if metric != 'kl' else float('inf')
+    
+            for alpha in tqdm(alphas, desc=f"Calculating best alpha for {metric}", leave=False):
+                y = np.exp(-alpha * x)
+    
+                if metric == 'kl':
+                    metric_value = self.calculate_kl_divergence(y, x)
+                    if metric_value < best_metric_value:
+                        best_metric_value = metric_value
+                        best_alpha = alpha
+                elif metric == 'entropy':
+                    metric_value = self.calculate_entropy(y)
+                    if metric_value > best_metric_value:
+                        best_metric_value = metric_value
+                        best_alpha = alpha
+                elif metric == 'std':
+                    metric_value = self.calculate_std_dev(y)
+                    if metric_value > best_metric_value:
+                        best_metric_value = metric_value
+                        best_alpha = alpha
+    
+            return best_alpha, max_node_index
+    
+        # 计算不同的度量方法的最佳alpha
+        print("Calculating best alphas...")
+        iid_latency_alpha_kl, iid_index_kl = find_best_alpha(latency_data_iid, 'kl')
+        ar1_latency_alpha_kl, ar1_index_kl = find_best_alpha(latency_data_ar1, 'kl')
+        iid_latency_alpha_entropy, iid_index_entropy = find_best_alpha(latency_data_iid, 'entropy')
+        ar1_latency_alpha_entropy, ar1_index_entropy = find_best_alpha(latency_data_ar1, 'entropy')
+        iid_latency_alpha_std, iid_index_std = find_best_alpha(latency_data_iid, 'std')
+        ar1_latency_alpha_std, ar1_index_std = find_best_alpha(latency_data_ar1, 'std')
+        # 绘制6张图并合并为一张大图
+        fig, axs = plt.subplots(2, 3, figsize=(18, 10))
+        ax = axs.ravel()
+    
+        # KL散度
+        ax[0].hist(np.exp(-iid_latency_alpha_kl * latency_data_iid[iid_index_kl, :]), bins=30, density=True, alpha=0.6, color='g')
+        ax[0].set_title(f'Iid Latency KL - Best alpha = {iid_latency_alpha_kl:.3f}')
+        ax[1].hist(np.exp(-ar1_latency_alpha_kl * latency_data_ar1[ar1_index_kl, :]), bins=30, density=True, alpha=0.6, color='g')
+        ax[1].set_title(f'Ar1 Latency KL - Best alpha = {ar1_latency_alpha_kl:.3f}')
+    
+        # 信息熵
+        ax[2].hist(np.exp(-iid_latency_alpha_entropy * latency_data_iid[iid_index_entropy, :]), bins=30, density=True, alpha=0.6, color='g')
+        ax[2].set_title(f'Iid Latency Entropy - Best alpha = {iid_latency_alpha_entropy:.3f}')
+        ax[3].hist(np.exp(-ar1_latency_alpha_entropy * latency_data_ar1[ar1_index_entropy, :]), bins=30, density=True, alpha=0.6, color='g')
+        ax[3].set_title(f'Ar1 Latency Entropy - Best alpha = {ar1_latency_alpha_entropy:.3f}')
+    
+        # 标准差
+        ax[4].hist(np.exp(-iid_latency_alpha_std * latency_data_iid[iid_index_std, :]), bins=30, density=True, alpha=0.6, color='g')
+        ax[4].set_title(f'Iid Latency Std - Best alpha = {iid_latency_alpha_std:.3f}')
+        ax[5].hist(np.exp(-ar1_latency_alpha_std * latency_data_ar1[ar1_index_std, :]), bins=30, density=True, alpha=0.6, color='g')
+        ax[5].set_title(f'Ar1 Latency Std - Best alpha = {ar1_latency_alpha_std:.3f}')
+    
+        plt.tight_layout()
+        plt.show()
+        
+        return iid_latency_alpha_kl, ar1_latency_alpha_std
+
+    def _generate_means(self, mean: float, std: float) -> np.ndarray:
         """
         生成节点的平均负载或延迟数据。
 
         :return: 包含节点平均负载或延迟的 numpy 数组
         """
-        return np.random.normal(mean, var, size=(self.N,))
+        return np.random.normal(mean, std, size=(self.N,))
 
-    def _generate_iid_data(self, var: float, means: np.ndarray, data_type: str = 'load') -> tuple[np.ndarray, np.ndarray]:
+    def _generate_iid_data(self, std: float, means: np.ndarray, data_type: str = 'load') -> tuple[np.ndarray, np.ndarray]:
         """
         生成 IID 数据。
 
@@ -70,7 +245,7 @@ class DataGenerator:
             loads = np.array([
                 np.random.normal(
                     loc=means[i],
-                    scale=var,
+                    scale=std,
                     size=self.T
                 ) for i in range(self.N)
             ])
@@ -97,7 +272,7 @@ class DataGenerator:
                 ar1 = np.zeros(self.T)
                 ar1[0] = means[i]
                 for t in range(1, self.T):
-                    ar1[t] = theta * ar1[t-1] + (1 - theta) * np.random.normal(means[i], np.sqrt(self.node_load_iid_var))
+                    ar1[t] = theta * ar1[t-1] + (1 - theta) * np.random.normal(means[i], np.sqrt(self.node_load_iid_std))
                 loads[i] = ar1
 
             elif data_type == 'latency':
@@ -129,11 +304,11 @@ class DataGenerator:
         print(f'Number of Training and Validation Time Steps: {self.T_train_val}')
         print(f'Number of Testing Time Steps: {self.T_test}')
         print(f'Node Load Mean Mean: {self.node_load_mean_mean}')
-        print(f'Node Load Mean Variance: {self.node_load_mean_var}')
-        print(f'Node Load IID Variance: {self.node_load_iid_var}')
+        print(f'Node Load Mean Variance: {self.node_load_mean_std}')
+        print(f'Node Load IID Variance: {self.node_load_iid_std}')
         print(f'Node Load AR1 Theta: {self.node_load_ar1_theta}')
         print(f'Node Latency Mean Mean: {self.node_latency_mean_mean}')
-        print(f'Node Latency Mean Variance: {self.node_latency_mean_var}')
+        print(f'Node Latency Mean Variance: {self.node_latency_mean_std}')
         print(f'Node Latency AR1 Theta: {self.node_latency_ar1_theta}')
         print(f'-----------------------------------------')
 
@@ -752,7 +927,7 @@ def config_manager(if_print=True) -> DictConfig:
     管理和创建所有配置。
     """
     # 加载 config.yaml 文件
-    config = OmegaConf.load("config/config.yaml")
+    config = OmegaConf.load("E:/Study in the UK/Project/MScProject/config/config.yaml")
 
     if if_print:
         # 打印完整的配置内容
@@ -787,27 +962,35 @@ def path_manager(config: DictConfig) -> tuple[Path, Path, Path, Path, Path]:
         
     return global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path
 #%%
-def import_data_manager(models_pkl_path, data_type: str) -> DataManager:
+def import_data_manager(models_pkl_path, data_type: str, if_print=False) -> DataManager:
     """
     从Pickle文件中导入数据管理对象。
     
     # 示例调用
-    load_iid_data_manage = import_data_manager('iid_load')
-    load_ar1_data_manage = import_data_manager('ar1_load')
-    latency_iid_data_manage = import_data_manager('iid_latency')
-    latency_ar1_data_manage = import_data_manager('ar1_latency')
-    reward_data_manager = import_data_manager('reward')
+    iid_load_data_manager = import_data_manager(models_pkl_path, 'iid_load')
+    ar1_load_data_manager = import_data_manager(models_pkl_path, 'ar1_load')
+    iid_latency_data_manager = import_data_manager(models_pkl_path, 'iid_latency')
+    ar1_latency_data_manager = import_data_manager(models_pkl_path, 'ar1_latency')
+    reward_data_manager = import_data_manager(models_pkl_path, 'reward')
     
     # 绘制数据
-    load_iid_data_manage.plot_range_data(load_iid_data_manage.data_np[:3, :], title='Load IID Data')
-    load_ar1_data_manage.plot_range_data(load_ar1_data_manage.data_np[:3, :], title='Load AR(1) Data')
-    latency_iid_data_manage.plot_range_data(latency_iid_data_manage.data_np[:3, :], title='Latency IID Data')
-    latency_ar1_data_manage.plot_range_data(latency_ar1_data_manage.data_np[:3, :], title='Latency AR(1) Data')
+    iid_load_iid_data_manage.plot_range_data(load_iid_data_manage.data_np[:3, :], title='Load IID Data')
+    ar1_load_ar1_data_manage.plot_range_data(load_ar1_data_manage.data_np[:3, :], title='Load AR(1) Data')
+    iid_latency_idata_manage.plot_range_data(latency_iid_data_manage.data_np[:3, :], title='Latency IID Data')
+    ar1_latency_data_manager.plot_range_data(latency_ar1_data_manage.data_np[:3, :], title='Latency AR(1) Data')
+    reward_data_manager.plot_reward_data()
     """
     file_path = models_pkl_path / f'{data_type}_data_manager.pkl'
 
     with open(file_path, 'rb') as f:
         data_manager = pickle.load(f)
+    
+    if if_print:
+        if data_type in ['iid_load', 'ar1_load', 'iid_latency', 'ar1_latency']:
+            data_manager.plot_range_data(data_manager.data_np[:3, :], title='data_type')
+        elif data_type == 'reward':
+            data_manager.print_info()
+            data_manager.plot_reward_data()
 
     return data_manager
 
@@ -815,6 +998,8 @@ def import_data_manager(models_pkl_path, data_type: str) -> DataManager:
 if __name__ == '__main__':
     # 配置管理
     config = config_manager()
+    
+    # 此步执行完之后，手动调整config.yaml中的data_generation.reward_parameters的参数，再继续执行下面的代码，尤其是manage_and_save_data(config, 'reward')。
 
     # 路径管理
     global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path = path_manager(config)
@@ -828,5 +1013,7 @@ if __name__ == '__main__':
     manage_and_save_data(config, 'ar1_load', 0, 3)
     manage_and_save_data(config, 'iid_latency', 0, 3)
     manage_and_save_data(config, 'ar1_latency', 0, 3)
-    manage_and_save_data(config, 'reward')
+    # manage_and_save_data(config, 'reward')
+#%%
+# manage_and_save_data(config, 'reward')
 #%%
