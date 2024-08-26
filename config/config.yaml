@@ -61,7 +61,7 @@ epsilon_greedy:
     epsilon_step: 0.01 # epsilon 的步长
     epsilon_default_value: 0.1 # epsilon 的默认值
 
-  epsilon_vs_cumulative_regret:
+  evaluation:
     epsilon_min: 0.0001 # epsilon 的最小值
     epsilon_max: 0.2001 # epsilon 的最大值
     epsilon_step: 0.0005 # epsilon 的步长
@@ -80,10 +80,10 @@ adaptive_epsilon_greedy:
     min_epsilon_step: 0.001 # 算法可以取到的 epsilon 的最小值的范围的步长
     min_epsilon_default_value: 0.05 # 算法可以取到的 epsilon 的最小值的默认值
 
-  epsilon_vs_cumulative_regret:
-    epsilon_min: 0.0001 # epsilon 的最小值
-    epsilon_max: 0.2001 # epsilon 的最大值
-    epsilon_step: 0.0005 # epsilon 的步长
+  evaluation:
+    init_epsilon_min: 0.0001 # epsilon 的最小值
+    init_epsilon_max: 0.1001 # epsilon 的最大值
+    init_epsilon_step: 0.0005 # epsilon 的步长
     min_epsilon: 0.05 # 算法可以取到的 epsilon 的最小值
 
 dynamic_adaptive_epsilon_greedy:
@@ -103,36 +103,69 @@ dynamic_adaptive_epsilon_greedy:
     percentiles_step: 1 # 阈值选取的之前的单步遗憾的百分位数的步长
     percentiles_default_value: 80 # 阈值选取的之前的单步遗憾的百分位数的默认值
 
-  epsilon_vs_cumulative_regret:
-    epsilon_min: 0.0001 # epsilon 的最小值
-    epsilon_max: 0.2001 # epsilon 的最大值
-    epsilon_step: 0.0005 # epsilon 的步长
-    percentiles: 80 # 阈值选取的之前的单步遗憾的百分位数
+  evaluation:
+    init_epsilon_min: 0.0001 # epsilon 的最小值
+    init_epsilon_max: 0.1001 # epsilon 的最大值
+    init_epsilon_step: 0.0005 # epsilon 的步长
+    default_percentiles: 80 # 阈值选取的之前的单步遗憾的百分位数
+
+    percentiles_min: 50 # 阈值选取的之前的单步遗憾的百分位数的最小值
+    percentiles_max: 100 # 阈值选取的之前的单步遗憾的百分位数的最大值
+    percentiles_step: 1 # 阈值选取的之前的单步遗憾的百分位数的步长
+    default_init_epsilon: 0.04 # epsilon 的默认值
 
 boltzmann:
   dynamic_plot:
     temperature_min: 0.01 # temperature 的最小值
     temperature_max: 1.01 # temperature 的最大值
     temperature_step: 0.001 # temperature 的步长
-    temperature_default_value: 0.01 # temperature 的默认值
+    temperature_default_value: 0.5 # temperature 的默认值
 
-  temperature_vs_cumulative_regret:
+  evaluation:
     temperature_min: 0.01 # temperature 的最小值
-    temperature_max: 1.01 # temperature 的最大值
+    temperature_max: 0.25 # temperature 的最大值
     temperature_step: 0.001 # temperature 的步长
+
+thompson_sampling:
+  # 无参数
 
 ucb:
 #  c: 1.5  # ucb 的参数
   dynamic_plot:
-      c_min: 0.1 # ucb 的参数的最小值
-      c_max: 3.1 # ucb 的参数的最大值
-      c_step: 0.1 # ucb 的参数的步长
-      c_default_value: 1.5 # ucb 的参数的默认值
+      c_min: 0.001 # ucb 的参数的最小值
+      c_max: 1 # ucb 的参数的最大值
+      c_step: 0.001 # ucb 的参数的步长
+      c_default_value: 0.5 # ucb 的参数的默认值
 
-  c_vs_cumulative_regret:
-      c_min: 0.1 # ucb 的参数的最小值
-      c_max: 3.1 # ucb 的参数的最大值
-      c_step: 0.1 # ucb 的参数的步长
+  evaluation:
+      c_min: 0.001 # ucb 的参数的最小值
+      c_max: 1.0   # ucb 的参数的最大值
+      c_step: 0.001 # ucb 的参数的步长
+
+exp3:
+  dynamic_plot:
+    gamma_min: 0.001 # eta 的最小值
+    gamma_max: 1.0 # eta 的最大值
+    gamma_step: 0.001 # eta 的步长
+    gamma_default_value: 0.01 # eta 的默认值
+
+  evaluation:
+    gamma_min: 0.001 # eta 的最小值
+    gamma_max: 1.0 # eta 的最大值
+    gamma_step: 0.001 # eta 的步长
+
+exp_ix:
+  dynamic_plot:
+    eta_min: 0.01 # eta 的最小值
+    eta_max: 1.01 # eta 的最大值
+    eta_step: 0.01 # eta 的步长
+    eta_default_value: 0.5 # eta 的默认值
+
+  evaluation:
+    eta_min: 0.01 # eta 的最小值
+    eta_max: 1.01 # eta 的最大值
+    eta_step: 0.01 # eta 的步长
+
 
 exp4:
   batch_size: 64  # Batch size
