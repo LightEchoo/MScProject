@@ -26,8 +26,8 @@ class DataGenerate:
         self.T_train_val = base_config.T_train_val
         self.T_test = base_config.T_test
         self.node_mean = data_gen_config.node_load_mean_mean
-        self.node_var = data_gen_config.node_load_mean_var
-        self.node_iid_var = data_gen_config.node_load_iid_var
+        self.node_var = data_gen_config.node_load_mean_std
+        self.node_iid_var = data_gen_config.node_load_iid_std
         self.node_theta = data_gen_config.node_load_ar1_theta
 
         # 初始化其他属性

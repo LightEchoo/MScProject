@@ -9,23 +9,6 @@ from omegaconf import DictConfig, OmegaConf
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 #%%
-# # 加载 config.yaml 文件
-# config = OmegaConf.load("config/config.yaml")
-# global_path = Path(config.path.global_path)
-# data_path = global_path / 'Data'
-# # 打印完整的配置内容
-# print(f'---------- Config Info ----------')
-# print(OmegaConf.to_yaml(config))
-# # 打印全局路径和数据路径
-# print(f'---------- Path Info ----------')
-# print(f'Global Path: {global_path}')
-# print(f'Data Path: {data_path}')
-#%%
-# load_iid = pd.read_csv(data_path/'load_iid_data.csv').values
-# load_ar1 = pd.read_csv(data_path/'load_ar1_data.csv').values
-# latency_iid = pd.read_csv(data_path/'latency_iid_data.csv').values
-# latency_ar1 = pd.read_csv(data_path/'latency_ar1_data.csv').values
-#%%
 class DataGenerator:
     def __init__(self, config: DictConfig, if_save: bool) -> None:
         """
@@ -45,12 +28,12 @@ class DataGenerator:
         self.T_test = base_config.T_test
 
         self.node_load_mean_mean = data_gen_config.node_load_mean_mean
-        self.node_load_mean_var = data_gen_config.node_load_mean_var
-        self.node_load_iid_var = data_gen_config.node_load_iid_var
+        self.node_load_mean_var = data_gen_config.node_load_mean_std
+        self.node_load_iid_var = data_gen_config.node_load_iid_std
         self.node_load_ar1_theta = data_gen_config.node_load_ar1_theta
 
         self.node_latency_mean_mean = latency_gen_config.node_latency_mean_mean
-        self.node_latency_mean_var = latency_gen_config.node_latency_mean_var
+        self.node_latency_mean_var = latency_gen_config.node_latency_mean_std
         self.node_latency_ar1_theta = latency_gen_config.node_latency_ar1_theta
 
         # 初始化其他属性
@@ -131,10 +114,10 @@ class DataGenerator:
         """
         将生成的数据保存为 CSV 文件。
         """
-        pd.DataFrame(self.load_iid).to_csv(data_path/'load_iid_data.csv', index=False)
-        pd.DataFrame(self.load_ar1).to_csv(data_path/'load_ar1_data.csv', index=False)
-        pd.DataFrame(self.latency_iid).to_csv(data_path/'latency_iid_data.csv', index=False)
-        pd.DataFrame(self.latency_ar1).to_csv(data_path/'latency_ar1_data.csv', index=False)
+        pd.DataFrame(self.load_iid).to_csv(load_latency_original_csv_path/'load_iid_data.csv', index=False)
+        pd.DataFrame(self.load_ar1).to_csv(load_latency_original_csv_path/'load_ar1_data.csv', index=False)
+        pd.DataFrame(self.latency_iid).to_csv(load_latency_original_csv_path/'latency_iid_data.csv', index=False)
+        pd.DataFrame(self.latency_ar1).to_csv(load_latency_original_csv_path/'latency_ar1_data.csv', index=False)
 
     def print_data_generate_info(self) -> None:
         """
@@ -259,11 +242,15 @@ class DataGenerator:
         plt.show()
 #%%
 class RewardDataCalculator:
-    def __init__(self, load_iid, latency_iid, load_ar1, latency_ar1: np.ndarray, reward_parameters, if_save=False):
-        self.load_iid = load_iid
-        self.latency_iid = latency_iid
-        self.load_ar1 = load_ar1
-        self.latency_ar1 = latency_ar1
+    def __init__(self, reward_parameters, if_save=False):
+        
+        # 加载 iid 数据
+        self.iid_load = pd.read_csv(load_latency_original_csv_path / 'load_iid_data.csv').values
+        self.iid_latency = pd.read_csv(load_latency_original_csv_path / 'latency_iid_data.csv').values
+
+        # 加载 ar1 数据
+        self.ar1_load = pd.read_csv(load_latency_original_csv_path / 'load_ar1_data.csv').values
+        self.ar1_latency = pd.read_csv(load_latency_original_csv_path / 'latency_ar1_data.csv').values
 
         # 保存reward_parameters_slider的相关参数到self
         self.iid_alpha_load_0= reward_parameters.iid.alpha_load_0
@@ -273,13 +260,13 @@ class RewardDataCalculator:
         self.ar1_alpha_latency_1 = reward_parameters.ar1.alpha_latency_1
 
         # 计算reward数据
-        self.iid_load_reward_0 = self.calculate_reward(self.load_iid, 'load_0')
-        self.iid_load_reward_1 = self.calculate_reward(self.load_iid, 'load_1')
-        self.iid_latency_reward_1 = self.calculate_reward(self.latency_iid, 'latency_1')
+        self.iid_load_reward_0 = self.calculate_reward(self.iid_load, 'load_0')
+        self.iid_load_reward_1 = self.calculate_reward(self.iid_load, 'load_1')
+        self.iid_latency_reward_1 = self.calculate_reward(self.iid_latency, 'latency_1')
 
-        self.ar1_load_reward_0 = self.calculate_reward(self.load_ar1, 'load_0')
-        self.ar1_load_reward_1 = self.calculate_reward(self.load_ar1, 'load_1')
-        self.ar1_latency_reward_1 = self.calculate_reward(self.latency_ar1, 'latency_1')
+        self.ar1_load_reward_0 = self.calculate_reward(self.ar1_load, 'load_0')
+        self.ar1_load_reward_1 = self.calculate_reward(self.ar1_load, 'load_1')
+        self.ar1_latency_reward_1 = self.calculate_reward(self.ar1_latency, 'latency_1')
 
         # 保存reward数据
         if if_save:
@@ -306,13 +293,13 @@ class RewardDataCalculator:
             raise ValueError(f"Unknown method: {method}")
 
     def save_reward_data(self):
-        np.save(data_path/'iid_load_reward_0.npy', self.iid_load_reward_0)
-        np.save(data_path/'iid_load_reward_1.npy', self.iid_load_reward_1)
-        np.save(data_path/'iid_latency_reward_1.npy', self.iid_latency_reward_1)
+        np.save(rewards_npy_path/'iid_load_reward_0.npy', self.iid_load_reward_0)
+        np.save(rewards_npy_path/'iid_load_reward_1.npy', self.iid_load_reward_1)
+        np.save(rewards_npy_path/'iid_latency_reward_1.npy', self.iid_latency_reward_1)
 
-        np.save(data_path/'ar1_load_reward_0.npy', self.ar1_load_reward_0)
-        np.save(data_path/'ar1_load_reward_1.npy', self.ar1_load_reward_1)
-        np.save(data_path/'ar1_latency_reward_1.npy', self.ar1_latency_reward_1)
+        np.save(rewards_npy_path/'ar1_load_reward_0.npy', self.ar1_load_reward_0)
+        np.save(rewards_npy_path/'ar1_load_reward_1.npy', self.ar1_load_reward_1)
+        np.save(rewards_npy_path/'ar1_latency_reward_1.npy', self.ar1_latency_reward_1)
 
     def print_info(self):
         print(f"iid_load_reward_0.shape: {self.iid_load_reward_0.shape}")
@@ -335,15 +322,15 @@ class RewardDataCalculator:
         fig, axs = plt.subplots(10, 3, figsize=(18, 30))
 
         datasets = [
-            ("Load IID Original", self.load_iid),
+            ("Load IID Original", self.iid_load),
             ("Load IID Reward 0", self.iid_load_reward_0),
             ("Load IID Reward 1", self.iid_load_reward_1),
-            ("Latency IID Original", self.latency_iid),
+            ("Latency IID Original", self.iid_latency),
             ("Latency IID Reward 1", self.iid_latency_reward_1),
-            ("Load AR1 Original", self.load_ar1),
+            ("Load AR1 Original", self.ar1_load),
             ("Load AR1 Reward 0", self.ar1_load_reward_0),
             ("Load AR1 Reward 1", self.ar1_load_reward_1),
-            ("Latency AR1 Original", self.latency_ar1),
+            ("Latency AR1 Original", self.ar1_latency),
             ("Latency AR1 Reward 1", self.ar1_latency_reward_1)
         ]
 
@@ -410,19 +397,19 @@ class RewardDataManager:
 
         # 加载数据
         # iid 数据
-        self.iid_load = pd.read_csv(data_path / 'load_iid_data.csv').values
-        self.iid_load_reward_0 = np.load(data_path / 'iid_load_reward_0.npy')
-        self.iid_load_reward_1 = np.load(data_path / 'iid_load_reward_1.npy')
-        self.iid_latency = pd.read_csv(data_path / 'latency_iid_data.csv').values
-        self.iid_latency_reward_1 = np.load(data_path / 'iid_latency_reward_1.npy')
+        self.iid_load = pd.read_csv(load_latency_original_csv_path / 'load_iid_data.csv').values
+        self.iid_load_reward_0 = np.load(rewards_npy_path / 'iid_load_reward_0.npy')
+        self.iid_load_reward_1 = np.load(rewards_npy_path / 'iid_load_reward_1.npy')
+        self.iid_latency = pd.read_csv(load_latency_original_csv_path / 'latency_iid_data.csv').values
+        self.iid_latency_reward_1 = np.load(rewards_npy_path / 'iid_latency_reward_1.npy')
 
         # ar1 数据
-        self.ar1_load = pd.read_csv(data_path / 'load_ar1_data.csv').values
-        self.ar1_load_reward_0 = np.load(data_path / 'ar1_load_reward_0.npy')
-        self.ar1_load_reward_1 = np.load(data_path / 'ar1_load_reward_1.npy')
-        self.ar1_latency = pd.read_csv(data_path / 'latency_ar1_data.csv').values
-        self.ar1_latency_reward_1 = np.load(data_path / 'ar1_latency_reward_1.npy')
-
+        self.ar1_load = pd.read_csv(load_latency_original_csv_path / 'load_ar1_data.csv').values
+        self.ar1_load_reward_0 = np.load(rewards_npy_path / 'ar1_load_reward_0.npy')
+        self.ar1_load_reward_1 = np.load(rewards_npy_path / 'ar1_load_reward_1.npy')
+        self.ar1_latency = pd.read_csv(load_latency_original_csv_path / 'latency_ar1_data.csv').values
+        self.ar1_latency_reward_1 = np.load(rewards_npy_path / 'ar1_latency_reward_1.npy')
+        
     def print_info(self):
         print(f"---------- Reward Data Info ----------")
         print(f"iid_load_original.shape: {self.iid_load.shape}")
@@ -548,13 +535,13 @@ class DataManager:
 
         # 加载数据
         # iid 数据
-        self.iid_load = pd.read_csv(data_path / 'load_iid_data.csv').values
-        self.iid_latency = pd.read_csv(data_path / 'latency_iid_data.csv').values
-
+        self.iid_load = pd.read_csv(load_latency_original_csv_path / 'load_iid_data.csv').values
+        self.iid_latency = pd.read_csv(load_latency_original_csv_path / 'latency_iid_data.csv').values
+        
         # ar1 数据
-        self.ar1_load = pd.read_csv(data_path / 'load_ar1_data.csv').values
-        self.ar1_latency = pd.read_csv(data_path / 'latency_ar1_data.csv').values
-
+        self.ar1_load = pd.read_csv(load_latency_original_csv_path / 'load_ar1_data.csv').values
+        self.ar1_latency = pd.read_csv(load_latency_original_csv_path / 'latency_ar1_data.csv').values
+        
         # 根据数据类型选择数据
         match self.data_type:
             case 'iid_load':
@@ -739,59 +726,107 @@ class DataManager:
         plt.show()
 
 #%%
-def manage_and_save_data(config: DictConfig, data_type: str, plot_start_node: int, plot_end_node: int, data_path: Path) -> None:
+def manage_and_save_data(config: DictConfig, data_type: str, plot_start_node: int=0, plot_end_node: int=3) -> None:
     """
     生成数据，绘图，并保存数据管理对象。
-
-    :param config: 配置对象
-    :param data_type: 数据类型，例如 'iid_load', 'ar1_load', 'iid_latency', 'ar1_latency'
-    :param data_path: 数据保存的路径
-    :param plot_title: 绘图的标题
     """
-    # 数据生成
-    data_manager = DataManager(config, data_type)
-
-    # 绘图
-    data_manager.plot_range_data(data_manager.data_np[plot_start_node:plot_end_node, :], title=f'{data_type} Data')
+    
+    if data_type in ['iid_load', 'ar1_load', 'iid_latency', 'ar1_latency']:
+        # 数据生成
+        data_manager = DataManager(config, data_type)
+    
+        # 绘图
+        data_manager.plot_range_data(data_manager.data_np[plot_start_node:plot_end_node, :], title=f'{data_type} Data')
+    
+    elif data_type == 'reward':
+        # 计算reward数据
+        RewardDataCalculator(config.data_generation.reward_parameters, if_save=True)
+        data_manager = RewardDataManager(config)
 
     # 保存数据
-    with open(data_path/f'{data_type}_data_manage.pkl', 'wb') as f:
+    with open(models_pkl_path/f'{data_type}_data_manager.pkl', 'wb') as f:
         pickle.dump(data_manager, f)
 #%%
-if __name__ == '__main__':
-
+def config_manager(if_print=True) -> DictConfig:
+    """
+    管理和创建所有配置。
+    """
     # 加载 config.yaml 文件
     config = OmegaConf.load("config/config.yaml")
+
+    if if_print:
+        # 打印完整的配置内容
+        print(f'---------- Config Info ----------')
+        print(OmegaConf.to_yaml(config))
+        print(f'----------- config End -----------\n')
+    
+    return config
+    
+#%%
+def path_manager(config: DictConfig) -> tuple[Path, Path, Path, Path, Path]:
+    """
+    管理和创建所有路径。
+    """
     global_path = Path(config.path.global_path)
     data_path = global_path / 'Data'
-    # 打印完整的配置内容
-    print(f'---------- Config Info ----------')
-    print(OmegaConf.to_yaml(config))
+    load_latency_original_csv_path = data_path / 'load_latency_original_csv'
+    rewards_npy_path = data_path / 'rewards_npy'
+    models_pkl_path = data_path / 'models_pkl'
+    # 创建所有路径（如果路径不存在）
+    for path in [global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path]:
+        path.mkdir(parents=True, exist_ok=True)
+
     # 打印全局路径和数据路径
     print(f'---------- Path Info ----------')
     print(f'Global Path: {global_path}')
     print(f'Data Path: {data_path}')
+    print(f'Load Latency Original CSV Path: {load_latency_original_csv_path}')
+    print(f'Rewards NPY Path: {rewards_npy_path}')
+    print(f'Models PKL Path: {models_pkl_path}')
+    print(f'----------- Path End -----------')
+        
+    return global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path
+#%%
+def import_data_manager(models_pkl_path, data_type: str) -> DataManager:
+    """
+    从Pickle文件中导入数据管理对象。
+    
+    # 示例调用
+    load_iid_data_manage = import_data_manager('iid_load')
+    load_ar1_data_manage = import_data_manager('ar1_load')
+    latency_iid_data_manage = import_data_manager('iid_latency')
+    latency_ar1_data_manage = import_data_manager('ar1_latency')
+    reward_data_manager = import_data_manager('reward')
+    
+    # 绘制数据
+    load_iid_data_manage.plot_range_data(load_iid_data_manage.data_np[:3, :], title='Load IID Data')
+    load_ar1_data_manage.plot_range_data(load_ar1_data_manage.data_np[:3, :], title='Load AR(1) Data')
+    latency_iid_data_manage.plot_range_data(latency_iid_data_manage.data_np[:3, :], title='Latency IID Data')
+    latency_ar1_data_manage.plot_range_data(latency_ar1_data_manage.data_np[:3, :], title='Latency AR(1) Data')
+    """
+    file_path = models_pkl_path / f'{data_type}_data_manager.pkl'
 
-    # 数据生成
-    data_generate = DataGenerator(config, if_save=True)
+    with open(file_path, 'rb') as f:
+        data_manager = pickle.load(f)
+
+    return data_manager
+
+#%%
+if __name__ == '__main__':
+    # 配置管理
+    config = config_manager()
+
+    # 路径管理
+    global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path = path_manager(config)
 
 
-    load_iid = pd.read_csv(data_path / 'load_iid_data.csv').values
-    load_ar1 = pd.read_csv(data_path / 'load_ar1_data.csv').values
-    latency_iid = pd.read_csv(data_path / 'latency_iid_data.csv').values
-    latency_ar1 = pd.read_csv(data_path / 'latency_ar1_data.csv').values
-
-    # 计算reward数据
-    reward_data_calculator = RewardDataCalculator(load_iid, latency_iid, load_ar1, latency_ar1,
-                                                  config.data_generation.reward_parameters, if_save=True)
-
-    reward_data_manager = RewardDataManager(config)
-    with open(data_path/'reward_data_manager.pkl', 'wb') as f:
-        pickle.dump(reward_data_manager, f)
-
+    # iid/ar load/latency 数据生成
+    DataGenerator(config, if_save=True)
+    
     # 数据管理
-    manage_and_save_data(config, 'iid_load', 0, 3, data_path)
-    manage_and_save_data(config, 'ar1_load', 0, 3, data_path)
-    manage_and_save_data(config, 'iid_latency', 0, 3, data_path)
-    manage_and_save_data(config, 'ar1_latency', 0, 3, data_path)
+    manage_and_save_data(config, 'iid_load', 0, 3)
+    manage_and_save_data(config, 'ar1_load', 0, 3)
+    manage_and_save_data(config, 'iid_latency', 0, 3)
+    manage_and_save_data(config, 'ar1_latency', 0, 3)
+    manage_and_save_data(config, 'reward')
 #%%
