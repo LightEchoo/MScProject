@@ -100,9 +100,9 @@ class DataGenerate:
         """
         print('-----------------Data Generate Info-----------------')
         print('means_loads.shape:', self.means_loads.shape)
-        print('iid_load.shape:', self.load_iid.shape)
+        print('iid_load_pred.shape:', self.load_iid.shape)
         print('mean_iid.shape:', self.mean_iid.shape)
-        print('ar1_load.shape:', self.load_ar1.shape)
+        print('ar1_load_pred.shape:', self.load_ar1.shape)
         print('mean_ar1.shape:', self.mean_ar1.shape)
 
     def plot_original_means(self) -> None:
@@ -275,8 +275,8 @@ class TrainValidManage:
         打印训练和验证数据的信息。
         """
         print('-----------------Train and Valid Data Info-----------------')
-        print('iid_load.shape:', self.load_iid.shape)
-        print('ar1_load.shape:', self.load_ar1.shape)
+        print('iid_load_pred.shape:', self.load_iid.shape)
+        print('ar1_load_pred.shape:', self.load_ar1.shape)
         print('data_type:', self.data_type)
         print('data_np.shape:', self.data_np.shape)
         print('data_tensor.shape:', self.data_tensor.shape)

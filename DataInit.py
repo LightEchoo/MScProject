@@ -680,7 +680,6 @@ class RewardDataManager:
         axs[row, 2].legend()
         axs[row, 2].grid(True)
 
-
 #%%
 class DataManager:
     def __init__(self, config: DictConfig, data_type: str) -> None:
@@ -719,13 +718,13 @@ class DataManager:
         
         # 根据数据类型选择数据
         match self.data_type:
-            case 'iid_load':
+            case 'iid_load_pred':
                 self.data_np = self.iid_load
-            case 'ar1_load':
+            case 'ar1_load_pred':
                 self.data_np = self.ar1_load
-            case 'iid_latency':
+            case 'iid_latency_pred':
                 self.data_np = self.iid_latency
-            case 'ar1_latency':
+            case 'ar1_latency_pred':
                 self.data_np = self.ar1_latency
             case _:
                 raise ValueError(f"Unknown data_type: {self.data_type}")
@@ -818,10 +817,10 @@ class DataManager:
         print(f'seq_length: {self.seq_length}')
 
         print(f'----------------- Data Info -----------------')
-        print(f'iid_load.shape: {self.iid_load.shape}')
-        print(f'ar1_load.shape: {self.ar1_load.shape}')
-        print(f'iid_latency.shape: {self.iid_latency.shape}')
-        print(f'ar1_latency.shape: {self.ar1_latency.shape}')
+        print(f'iid_load_pred.shape: {self.iid_load.shape}')
+        print(f'ar1_load_pred.shape: {self.ar1_load.shape}')
+        print(f'iid_latency_pred.shape: {self.iid_latency.shape}')
+        print(f'ar1_latency_pred.shape: {self.ar1_latency.shape}')
         print(f'data_np.shape: {self.data_np.shape}')
         print(f'data_tensor.shape: {self.data_tensor.shape}')
 
@@ -906,7 +905,7 @@ def manage_and_save_data(config: DictConfig, data_type: str, plot_start_node: in
     生成数据，绘图，并保存数据管理对象。
     """
     
-    if data_type in ['iid_load', 'ar1_load', 'iid_latency', 'ar1_latency']:
+    if data_type in ['iid_load_pred', 'ar1_load_pred', 'iid_latency_pred', 'ar1_latency_pred']:
         # 数据生成
         data_manager = DataManager(config, data_type)
     
@@ -926,8 +925,10 @@ def config_manager(if_print=True) -> DictConfig:
     """
     管理和创建所有配置。
     """
+    config_path = '/home/alex4060/PythonProject/MScProject/MScProject/config/config.yaml'
+
     # 加载 config.yaml 文件
-    config = OmegaConf.load("E:/Study in the UK/Project/MScProject/config/config.yaml")
+    config = OmegaConf.load(config_path)
 
     if if_print:
         # 打印完整的配置内容
@@ -936,7 +937,7 @@ def config_manager(if_print=True) -> DictConfig:
         print(f'----------- config End -----------\n')
     
     return config
-    
+
 #%%
 def path_manager(config: DictConfig) -> tuple[Path, Path, Path, Path, Path]:
     """
@@ -965,14 +966,14 @@ def path_manager(config: DictConfig) -> tuple[Path, Path, Path, Path, Path]:
 def import_data_manager(models_pkl_path, data_type: str, if_print=False) -> DataManager:
     """
     从Pickle文件中导入数据管理对象。
-    
+
     # 示例调用
-    iid_load_data_manager = import_data_manager(models_pkl_path, 'iid_load')
-    ar1_load_data_manager = import_data_manager(models_pkl_path, 'ar1_load')
-    iid_latency_data_manager = import_data_manager(models_pkl_path, 'iid_latency')
-    ar1_latency_data_manager = import_data_manager(models_pkl_path, 'ar1_latency')
+    iid_load_data_manager = import_data_manager(models_pkl_path, 'iid_load_pred')
+    ar1_load_data_manager = import_data_manager(models_pkl_path, 'ar1_load_pred')
+    iid_latency_data_manager = import_data_manager(models_pkl_path, 'iid_latency_pred')
+    ar1_latency_data_manager = import_data_manager(models_pkl_path, 'ar1_latency_pred')
     reward_data_manager = import_data_manager(models_pkl_path, 'reward')
-    
+
     # 绘制数据
     iid_load_iid_data_manage.plot_range_data(load_iid_data_manage.data_np[:3, :], title='Load IID Data')
     ar1_load_ar1_data_manage.plot_range_data(load_ar1_data_manage.data_np[:3, :], title='Load AR(1) Data')
@@ -984,9 +985,9 @@ def import_data_manager(models_pkl_path, data_type: str, if_print=False) -> Data
 
     with open(file_path, 'rb') as f:
         data_manager = pickle.load(f)
-    
+
     if if_print:
-        if data_type in ['iid_load', 'ar1_load', 'iid_latency', 'ar1_latency']:
+        if data_type in ['iid_load_pred', 'ar1_load_pred', 'iid_latency_pred', 'ar1_latency_pred']:
             data_manager.plot_range_data(data_manager.data_np[:3, :], title='data_type')
         elif data_type == 'reward':
             data_manager.print_info()
@@ -998,21 +999,25 @@ def import_data_manager(models_pkl_path, data_type: str, if_print=False) -> Data
 if __name__ == '__main__':
     # 配置管理
     config = config_manager()
-    
-    # 此步执行完之后，手动调整config.yaml中的data_generation.reward_parameters的参数，再继续执行下面的代码，尤其是manage_and_save_data(config, 'reward')。
 
     # 路径管理
     global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path = path_manager(config)
 
 
+
     # iid/ar load/latency 数据生成
-    DataGenerator(config, if_save=True)
+    # DataGenerator(config, if_save=True)
+    # 此步执行完之后，手动调整config.yaml中的data_generation.reward_parameters的参数，再继续执行下面的代码，尤其是manage_and_save_data(config, 'reward')。
+
+    # EXP4 算法的专家系统的预测值管理器
+    # exp4_data_manager = Exp4DataManager(config, data_path)
     
     # 数据管理
-    manage_and_save_data(config, 'iid_load', 0, 3)
-    manage_and_save_data(config, 'ar1_load', 0, 3)
-    manage_and_save_data(config, 'iid_latency', 0, 3)
-    manage_and_save_data(config, 'ar1_latency', 0, 3)
+    # manage_and_save_data(config, 'iid_load_pred', 0, 3)
+    # manage_and_save_data(config, 'ar1_load_pred', 0, 3)
+    # manage_and_save_data(config, 'iid_latency_pred', 0, 3)
+    # manage_and_save_data(config, 'ar1_latency_pred', 0, 3)
+
     # manage_and_save_data(config, 'reward')
 #%%
 # manage_and_save_data(config, 'reward')

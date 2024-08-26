@@ -1,5 +1,5 @@
 path:
-  global_path: "E:/Study in the UK/Project/MScProject"  # 项目的根目录
+  global_path: "/home/alex4060/PythonProject/MScProject/MScProject"  # 项目的根目录
 
 base:
   N: 10  # 节点数

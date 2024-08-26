@@ -1,0 +1,177 @@
+path:
+  global_path: /home/alex4060/PythonProject/MScProject/MScProject
+base:
+  'N': 10
+  T: 11000
+  T_train_val: 10000
+  train_ratio: 0.8
+  T_train: 8000
+  T_val: 2000
+  T_test: 1000
+  lambda_load: 0.5
+  top_k:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+data_generation:
+  load_data:
+    node_load_mean_mean: 50.0
+    node_load_mean_std: 10.0
+    node_load_iid_std: 5.0
+    node_load_ar1_theta: 0.9
+  latency_data:
+    node_latency_mean_mean: 30.0
+    node_latency_mean_std: 10.0
+    node_latency_ar1_theta: 0.9
+  reward_parameters:
+    iid:
+      alpha_load_0: 36.0
+      alpha_latency_1: 0.031
+    ar1:
+      alpha_load_0: 36.0
+      alpha_latency_1: 0.02
+  reward_parameters_slider:
+    alpha_load_0:
+      value: 1.0
+      min: 0.001
+      max: 40.0
+      step: 0.01
+      description: alpha_load_0
+    alpha_latency_0:
+      value: 1.0
+      min: 0.001
+      max: 6.0
+      step: 0.01
+      description: alpha_latency_0
+    alpha_latency_1:
+      value: 0.5
+      min: 0.0001
+      max: 0.5
+      step: 0.001
+      description: alpha_latency_1
+epsilon_greedy:
+  dynamic_plot:
+    epsilon_min: 0.001
+    epsilon_max: 0.5
+    epsilon_step: 0.01
+    epsilon_default_value: 0.1
+  evaluation:
+    epsilon_min: 0.0001
+    epsilon_max: 0.2001
+    epsilon_step: 0.0005
+adaptive_epsilon_greedy:
+  dynamic_plot:
+    init_epsilon_min: 0.001
+    init_epsilon_max: 0.5
+    init_epsilon_step: 0.01
+    init_epsilon_default_value: 0.1
+    min_epsilon_min: 0.001
+    min_epsilon_max: 0.1
+    min_epsilon_step: 0.001
+    min_epsilon_default_value: 0.05
+  evaluation:
+    init_epsilon_min: 0.0001
+    init_epsilon_max: 0.1001
+    init_epsilon_step: 0.0005
+    min_epsilon: 0.05
+dynamic_adaptive_epsilon_greedy:
+  min_epsilon: 0.05
+  max_epsilon: 0.8
+  dynamic_plot:
+    init_epsilon_min: 0.001
+    init_epsilon_max: 0.5
+    init_epsilon_step: 0.01
+    init_epsilon_default_value: 0.1
+    percentiles_min: 50
+    percentiles_max: 100
+    percentiles_step: 1
+    percentiles_default_value: 80
+  evaluation:
+    init_epsilon_min: 0.0001
+    init_epsilon_max: 0.1001
+    init_epsilon_step: 0.0005
+    default_percentiles: 80
+    percentiles_min: 50
+    percentiles_max: 100
+    percentiles_step: 1
+    default_init_epsilon: 0.04
+boltzmann:
+  dynamic_plot:
+    temperature_min: 0.01
+    temperature_max: 1.01
+    temperature_step: 0.001
+    temperature_default_value: 0.5
+  evaluation:
+    temperature_min: 0.01
+    temperature_max: 0.25
+    temperature_step: 0.001
+thompson_sampling: None
+ucb:
+  dynamic_plot:
+    c_min: 0.001
+    c_max: 1
+    c_step: 0.001
+    c_default_value: 0.5
+  evaluation:
+    c_min: 0.001
+    c_max: 1.0
+    c_step: 0.001
+exp3:
+  dynamic_plot:
+    gamma_min: 0.001
+    gamma_max: 1.0
+    gamma_step: 0.001
+    gamma_default_value: 0.01
+  evaluation:
+    gamma_min: 0.001
+    gamma_max: 1.0
+    gamma_step: 0.001
+exp_ix:
+  dynamic_plot:
+    eta_min: 0.01
+    eta_max: 1.01
+    eta_step: 0.01
+    eta_default_value: 0.5
+  evaluation:
+    eta_min: 0.01
+    eta_max: 1.01
+    eta_step: 0.01
+exp4:
+  batch_size: 64
+  seq_length: 20
+  input_size: 10
+  output_size: 10
+  learning_rate: 0.001
+  num_workers: 16
+  num_epochs: 100
+  device: cuda
+  mix_precision: true
+  patience_epochs: 6
+  min_delta: 0.001
+  mode: min
+  factor: 0.1
+  patience_lr: 2
+  min_lr: 1.0e-06
+  threshold: 0.01
+  ARconfig:
+    order: 5
+  LSTMconfig:
+    hidden_size: 128
+    num_layers: 4
+    dropout_prob: 0.2
+    weight_decay: 0.0001
+  GNNconfig:
+    hidden_size: 128
+    num_layers: 4
+hidden_size: 116
+num_layers: 2
+learning_rate: 0.0016975088576830129
+weight_decay: 0.00033828365133419875
+factor: 0.197542203864316
+patience_lr: 6
+threshold: 0.00705511388536685
+num_epochs: 34
+patience_epochs: 8
+min_delta: 4.7123912723818694e-05
