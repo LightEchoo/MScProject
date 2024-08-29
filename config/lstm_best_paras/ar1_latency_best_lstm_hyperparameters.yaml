@@ -143,35 +143,25 @@ exp4:
   seq_length: 20
   input_size: 10
   output_size: 10
-  learning_rate: 0.001
+  learning_rate: 0.0016975088576830129
   num_workers: 16
-  num_epochs: 100
+  num_epochs: 34
   device: cuda
   mix_precision: true
-  patience_epochs: 6
-  min_delta: 0.001
+  patience_epochs: 8
+  min_delta: 4.7123912723818694e-05
   mode: min
-  factor: 0.1
-  patience_lr: 2
+  factor: 0.197542203864316
+  patience_lr: 6
   min_lr: 1.0e-06
-  threshold: 0.01
+  threshold: 0.00705511388536685
   ARconfig:
     order: 5
   LSTMconfig:
-    hidden_size: 128
-    num_layers: 4
+    hidden_size: 116
+    num_layers: 2
     dropout_prob: 0.2
-    weight_decay: 0.0001
+    weight_decay: 0.00033828365133419875
   GNNconfig:
     hidden_size: 128
     num_layers: 4
-hidden_size: 116
-num_layers: 2
-learning_rate: 0.0016975088576830129
-weight_decay: 0.00033828365133419875
-factor: 0.197542203864316
-patience_lr: 6
-threshold: 0.00705511388536685
-num_epochs: 34
-patience_epochs: 8
-min_delta: 4.7123912723818694e-05
