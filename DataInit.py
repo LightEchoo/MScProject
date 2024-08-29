@@ -362,7 +362,7 @@ class DataGenerator:
         axs[1, 4].set_title(f"Node {i+1} Latency AR1 Histogram")
 
         plt.tight_layout()
-        plt.savefig(f'Combined_Figure_Reordered_Node_{i+1}.png')
+        # plt.savefig(f'Combined_Figure_Reordered_Node_{i+1}.png')
         plt.show()
 
     def plot_comparison(self) -> None:
