@@ -983,7 +983,7 @@ if __name__ == '__main__':
 
 
     # iid/ar load/latency 数据生成
-    DataGenerator(config, if_save=True, generate_or_plot='plot')
+    DataGenerator(config, if_save=False, generate_or_plot='plot')
     # DataGenerator(config, if_save=True, generate_or_plot='generate')
     # 此步执行完之后，手动调整config.yaml中的data_generation.reward_parameters的参数，再继续执行下面的代码，尤其是manage_and_save_data(config, 'reward')。
     
