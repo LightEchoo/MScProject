@@ -1,4 +1,4 @@
-#%%
+# %%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,10 +12,12 @@ import scipy.stats as stats
 from tqdm import tqdm
 from DataInit import DataManager, RewardDataManager
 import DataInit
-#%%
+
+# %%
 import numpy as np
 import os
-#%%
+
+# %%
 class Exp4DataManager:
     def __init__(self, config: DictConfig, data_path: Path, if_print_plot: bool=False) -> None:
         """
@@ -50,10 +52,10 @@ class Exp4DataManager:
             self.exp4 = exp4
 
             # 加载预测数据
-            self.iid_load_pred = pd.read_csv(load_paths['iid'], header=None).values
-            self.ar1_load_pred = pd.read_csv(load_paths['ar1'], header=None).values
-            self.iid_latency_pred = pd.read_csv(latency_paths['iid'], header=None).values
-            self.ar1_latency_pred = pd.read_csv(latency_paths['ar1'], header=None).values
+            self.iid_load_pred = pd.read_csv(load_paths['iid'], header=None).to_numpy()
+            self.ar1_load_pred = pd.read_csv(load_paths['ar1'], header=None).to_numpy()
+            self.iid_latency_pred = pd.read_csv(latency_paths['iid'], header=None).to_numpy()
+            self.ar1_latency_pred = pd.read_csv(latency_paths['ar1'], header=None).to_numpy()
 
             # print(f"---------- ARDataManager Reward Data Info ----------")
             # print(f"iid_load_original.shape: {self.iid_load_pred.shape}")
@@ -187,8 +189,8 @@ class Exp4DataManager:
 
     def print_info(self, expert):
         if not hasattr(expert, 'iid_load_pred'):
-            raise ValueError(f"The provided expert does not have the required attributes.")
-        print(f"---------- Reward Data Info ----------")
+            raise ValueError("The provided expert does not have the required attributes.")
+        print("---------- Reward Data Info ----------")
         print(f"iid_load_original.shape: {expert.iid_load_pred.shape}")
         print(f"iid_load_pred_reward_0.shape: {expert.iid_load_pred_reward_0.shape}")
         print(f"iid_load_pred_reward_1.shape: {expert.iid_load_pred_reward_1.shape}")
@@ -200,7 +202,7 @@ class Exp4DataManager:
         print(f"ar1_load_pred_reward_1.shape: {expert.ar1_load_pred_reward_1.shape}")
         print(f"ar1_latency_original.shape: {expert.ar1_latency_pred.shape}")
         print(f"ar1_latency_pred_reward_1.shape: {expert.ar1_latency_pred_reward_1.shape}")
-        print(f"--------------------------------------")
+        print("--------------------------------------")
 
     def plot_reward_data(self, expert, start_node=0, end_node=2):
         # 检查节点索引是否合理
@@ -266,7 +268,8 @@ class Exp4DataManager:
         axs[row, 2].set_ylabel('Frequency')
         axs[row, 2].legend()
         axs[row, 2].grid(True)
-#%%
+
+# %%
 if __name__ == '__main__':
     # 配置管理
     config = DataInit.config_manager()
@@ -275,10 +278,12 @@ if __name__ == '__main__':
     global_path, data_path, load_latency_original_csv_path, rewards_npy_path, models_pkl_path = DataInit.path_manager(config)
 
     exp4_data_manager = Exp4DataManager(config, data_path, if_print_plot=True)
-
-    # exp4_data_manager = Exp4DataManager(config, data_path)
     
     # 保存数据
-    with open(models_pkl_path/f'exp4_data_manager.pkl', 'wb') as f:
+    with open(models_pkl_path/'exp4_data_manager.pkl', 'wb') as f:
         pickle.dump(exp4_data_manager, f)
-#%%
+
+# %%
+
+
+

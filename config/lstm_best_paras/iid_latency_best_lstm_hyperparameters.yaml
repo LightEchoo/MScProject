@@ -21,17 +21,18 @@ data_generation:
     node_load_mean_std: 10.0
     node_load_iid_std: 5.0
     node_load_ar1_theta: 0.9
+    node_load_ar1_std: 80.0
   latency_data:
     node_latency_mean_mean: 30.0
     node_latency_mean_std: 10.0
     node_latency_ar1_theta: 0.9
   reward_parameters:
     iid:
-      alpha_load_0: 36.0
-      alpha_latency_1: 0.031
+      alpha_load_0: 30.0
+      alpha_latency_1: 0.035
     ar1:
-      alpha_load_0: 36.0
-      alpha_latency_1: 0.02
+      alpha_load_0: 30.0
+      alpha_latency_1: 0.086
   reward_parameters_slider:
     alpha_load_0:
       value: 1.0
@@ -143,25 +144,24 @@ exp4:
   seq_length: 20
   input_size: 10
   output_size: 10
-  learning_rate: 6.612247285358286e-05
+  learning_rate: 0.00014188474074124994
   num_workers: 16
-  num_epochs: 85
+  num_epochs: 44
   device: cuda
   mix_precision: true
-  patience_epochs: 8
-  min_delta: 1.795499996070194e-05
+  patience_epochs: 4
+  min_delta: 5.942365875658014e-05
   mode: min
-  factor: 0.4127821961694413
-  patience_lr: 9
+  factor: 0.106256424807077
+  patience_lr: 6
   min_lr: 1.0e-06
-  threshold: 0.006878580054534956
+  threshold: 0.0010117406930688537
   ARconfig:
     order: 5
   LSTMconfig:
-    hidden_size: 292
-    num_layers: 3
+    hidden_size: 229
+    num_layers: 2
     dropout_prob: 0.2
-    weight_decay: 0.0003323386446799856
   GNNconfig:
     hidden_size: 128
     num_layers: 4

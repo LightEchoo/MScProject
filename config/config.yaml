@@ -152,7 +152,7 @@ exp3:
   evaluation:
     gamma_min: 0.001 # eta 的最小值
     gamma_max: 1.0 # eta 的最大值
-    gamma_step: 0.001 # eta 的步长
+    gamma_step: 0.005 # eta 的步长
 
 exp_ix:
   dynamic_plot:
@@ -164,7 +164,7 @@ exp_ix:
   evaluation:
     eta_min: 0.01 # eta 的最小值
     eta_max: 1.01 # eta 的最大值
-    eta_step: 0.01 # eta 的步长
+    eta_step: 0.05 # eta 的步长
 
 exp4:
   batch_size: 64  # Batch size
