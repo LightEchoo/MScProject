@@ -1,29 +1,29 @@
 path:
-  global_path: "/home/alex4060/PythonProject/MScProject/MScProject"  # 项目的根目录
+  global_path: "/home/alex4060/PythonProject/MScProject/MScProject"  # Project root directory
 
 base:
-  N: 10  # 节点数
-  T: 11000  # 总时间步数
-  T_train_val: 10000  # 训练和验证的时间步数
-  train_ratio: 0.8  # 训练集占比
-  T_train: 8000 # 训练的时间步数
-  T_val: 2000  # 验证的时间步数
-  T_test: 1000  # 测试的时间步数
-  lambda_load: 0.5  # load和latency的权重, 0.5表示load的权重
-  top_k: [1, 2, 3, 4, 5]  # top-k 的值
+  N: 10  # Number of nodes
+  T: 11000  # Total number of time steps
+  T_train_val: 10000  # Number of time steps for training and validation
+  train_ratio: 0.8  # Proportion of the training set
+  T_train: 8000 # Number of time steps for training
+  T_val: 2000  # Number of time steps for validation
+  T_test: 1000  # Number of time steps for testing
+  lambda_load: 0.5  # Weight of load and latency, 0.5 means the weight of load
+  top_k: [1, 2, 3, 4, 5]  # Values of top-k
 
 data_generation:
   load_data:
-    node_load_mean_mean: 50.0  # 节点的load的初始值/均值的均值
-    node_load_mean_std: 10.0  # 节点的load的初始值/均值的方差
-    node_load_iid_std: 5.0  # 节点的load值的iid方法的方差
-    node_load_ar1_theta: 0.9  # 节点的load值的ar1方法的自相关系数
-    node_load_ar1_std: 80.0  # 节点的load值的ar1方法的方差
+    node_load_mean_mean: 50.0  # Mean of the initial load/mean of nodes
+    node_load_mean_std: 10.0  # Standard deviation of the initial load/mean of nodes
+    node_load_iid_std: 5.0  # Standard deviation of the load using iid method
+    node_load_ar1_theta: 0.9  # Autocorrelation coefficient for load using AR1 method
+    node_load_ar1_std: 80.0  # Standard deviation of the load using AR1 method
 
   latency_data:
-    node_latency_mean_mean: 30.0  # 节点的latency的初始值/均值的均值
-    node_latency_mean_std: 10.0  # 节点的latency的初始值/均值的方差
-    node_latency_ar1_theta: 0.9  # 节点的latency值的ar1方法的自相关系数
+    node_latency_mean_mean: 30.0  # Mean of the initial latency/mean of nodes
+    node_latency_mean_std: 10.0  # Standard deviation of the initial latency/mean of nodes
+    node_latency_ar1_theta: 0.9  # Autocorrelation coefficient for latency using AR1 method
 
   reward_parameters:
     iid:
@@ -55,116 +55,116 @@ data_generation:
       description: 'alpha_latency_1'
 
 epsilon_greedy:
-  #  epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # epsilon 的值，在动态调整图中不起作用
+  #  epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # Values of epsilon, not used in dynamic plot
   dynamic_plot:
-    epsilon_min: 0.001 # epsilon 的最小值
-    epsilon_max: 0.5 # epsilon 的最大值
-    epsilon_step: 0.01 # epsilon 的步长
-    epsilon_default_value: 0.1 # epsilon 的默认值
+    epsilon_min: 0.001 # Minimum value of epsilon
+    epsilon_max: 0.5 # Maximum value of epsilon
+    epsilon_step: 0.01 # Step size for epsilon
+    epsilon_default_value: 0.1 # Default value of epsilon
 
   evaluation:
-    epsilon_min: 0.0001 # epsilon 的最小值
-    epsilon_max: 0.2001 # epsilon 的最大值
-    epsilon_step: 0.0005 # epsilon 的步长
+    epsilon_min: 0.0001 # Minimum value of epsilon
+    epsilon_max: 0.2001 # Maximum value of epsilon
+    epsilon_step: 0.0005 # Step size for epsilon
 
 adaptive_epsilon_greedy:
-  #  init_epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # epsilon 的值，在动态调整图中不起作用
-  #  min_epsilon: 0.05 # epsilon 的最小值，在动态调整图中不起作用
+  #  init_epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # Values of epsilon, not used in dynamic plot
+  #  min_epsilon: 0.05 # Minimum value of epsilon, not used in dynamic plot
   dynamic_plot:
-    init_epsilon_min: 0.001 # epsilon 的最小值
-    init_epsilon_max: 0.5 # epsilon 的最大值
-    init_epsilon_step: 0.01 # epsilon 的步长
-    init_epsilon_default_value: 0.1 # epsilon 的默认值
+    init_epsilon_min: 0.001 # Minimum value of epsilon
+    init_epsilon_max: 0.5 # Maximum value of epsilon
+    init_epsilon_step: 0.01 # Step size for epsilon
+    init_epsilon_default_value: 0.1 # Default value of epsilon
 
-    min_epsilon_min: 0.001 # 算法可以取到的 epsilon 的最小值的范围的最小值
-    min_epsilon_max: 0.1 # 算法可以取到的 epsilon 的最小值的范围的最大值
-    min_epsilon_step: 0.001 # 算法可以取到的 epsilon 的最小值的范围的步长
-    min_epsilon_default_value: 0.05 # 算法可以取到的 epsilon 的最小值的默认值
+    min_epsilon_min: 0.001 # Minimum value of the range for the minimum epsilon in the algorithm
+    min_epsilon_max: 0.1 # Maximum value of the range for the minimum epsilon in the algorithm
+    min_epsilon_step: 0.001 # Step size for the minimum epsilon in the algorithm
+    min_epsilon_default_value: 0.05 # Default value of the minimum epsilon in the algorithm
 
   evaluation:
-    init_epsilon_min: 0.05 # epsilon 的最小值
-    init_epsilon_max: 0.1001 # epsilon 的最大值
-    init_epsilon_step: 0.0005 # epsilon 的步长
-    min_epsilon: 0.05 # 算法可以取到的 epsilon 的最小值
+    init_epsilon_min: 0.05 # Minimum value of epsilon
+    init_epsilon_max: 0.1001 # Maximum value of epsilon
+    init_epsilon_step: 0.0005 # Step size for epsilon
+    min_epsilon: 0.05 # Minimum value of epsilon in the algorithm
 
 dynamic_adaptive_epsilon_greedy:
-  #  init_epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # epsilon 的值
-  min_epsilon: 0.05 # epsilon 的最小值
-  max_epsilon: 0.8 # epsilon 的最大值
-  #  threshold: 0.25 # epsilon的变化阈值
-  #  percentiles: 80 # 阈值选取的之前的单步遗憾的百分位数，表示有百分之多少的遗憾小于阈值，动态绘制时不起作用
+  #  init_epsilons : [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9]  # Values of epsilon
+  min_epsilon: 0.05 # Minimum value of epsilon
+  max_epsilon: 0.8 # Maximum value of epsilon
+  #  threshold: 0.25 # Threshold for changing epsilon
+  #  percentiles: 80 # Percentile of previous single-step regret used for threshold selection, not used in dynamic plot
   dynamic_plot:
-    init_epsilon_min: 0.001 # epsilon 的最小值
-    init_epsilon_max: 0.5 # epsilon 的最大值
-    init_epsilon_step: 0.01 # epsilon 的步长
-    init_epsilon_default_value: 0.1 # epsilon 的默认值
+    init_epsilon_min: 0.001 # Minimum value of epsilon
+    init_epsilon_max: 0.5 # Maximum value of epsilon
+    init_epsilon_step: 0.01 # Step size for epsilon
+    init_epsilon_default_value: 0.1 # Default value of epsilon
 
-    percentiles_min: 50 # 阈值选取的之前的单步遗憾的百分位数的最小值
-    percentiles_max: 100 # 阈值选取的之前的单步遗憾的百分位数的最大值
-    percentiles_step: 1 # 阈值选取的之前的单步遗憾的百分位数的步长
-    percentiles_default_value: 80 # 阈值选取的之前的单步遗憾的百分位数的默认值
+    percentiles_min: 50 # Minimum value of the percentile for selecting the threshold based on previous single-step regret
+    percentiles_max: 100 # Maximum value of the percentile for selecting the threshold based on previous single-step regret
+    percentiles_step: 1 # Step size for the percentile
+    percentiles_default_value: 80 # Default value of the percentile
 
   evaluation:
-    init_epsilon_min: 0.0001 # epsilon 的最小值
-    init_epsilon_max: 0.1001 # epsilon 的最大值
-    init_epsilon_step: 0.0005 # epsilon 的步长
-    default_percentiles: 80 # 阈值选取的之前的单步遗憾的百分位数
+    init_epsilon_min: 0.0001 # Minimum value of epsilon
+    init_epsilon_max: 0.1001 # Maximum value of epsilon
+    init_epsilon_step: 0.0005 # Step size for epsilon
+    default_percentiles: 80 # Percentile of previous single-step regret used for threshold selection
 
-    percentiles_min: 50 # 阈值选取的之前的单步遗憾的百分位数的最小值
-    percentiles_max: 100 # 阈值选取的之前的单步遗憾的百分位数的最大值
-    percentiles_step: 1 # 阈值选取的之前的单步遗憾的百分位数的步长
-    default_init_epsilon: 0.01 # epsilon 的默认值
+    percentiles_min: 50 # Minimum value of the percentile for selecting the threshold based on previous single-step regret
+    percentiles_max: 100 # Maximum value of the percentile for selecting the threshold based on previous single-step regret
+    percentiles_step: 1 # Step size for the percentile
+    default_init_epsilon: 0.01 # Default value of epsilon
 
 boltzmann:
   dynamic_plot:
-    temperature_min: 0.01 # temperature 的最小值
-    temperature_max: 1.01 # temperature 的最大值
-    temperature_step: 0.001 # temperature 的步长
-    temperature_default_value: 0.5 # temperature 的默认值
+    temperature_min: 0.01 # Minimum value of temperature
+    temperature_max: 1.01 # Maximum value of temperature
+    temperature_step: 0.001 # Step size for temperature
+    temperature_default_value: 0.5 # Default value of temperature
 
   evaluation:
-    temperature_min: 0.01 # temperature 的最小值
-    temperature_max: 0.25 # temperature 的最大值
-    temperature_step: 0.001 # temperature 的步长
+    temperature_min: 0.01 # Minimum value of temperature
+    temperature_max: 0.25 # Maximum value of temperature
+    temperature_step: 0.001 # Step size for temperature
 
-thompson_sampling: None # 无参数
+thompson_sampling: None # No parameters
 
 ucb:
-  #  c: 1.5  # ucb 的参数
+  #  c: 1.5  # Parameter for UCB
   dynamic_plot:
-    c_min: 0.001 # ucb 的参数的最小值
-    c_max: 1 # ucb 的参数的最大值
-    c_step: 0.001 # ucb 的参数的步长
-    c_default_value: 0.5 # ucb 的参数的默认值
+    c_min: 0.001 # Minimum value of parameter for UCB
+    c_max: 1 # Maximum value of parameter for UCB
+    c_step: 0.001 # Step size for parameter of UCB
+    c_default_value: 0.5 # Default value of parameter for UCB
 
   evaluation:
-    c_min: 0.001 # ucb 的参数的最小值
-    c_max: 1.0   # ucb 的参数的最大值
-    c_step: 0.001 # ucb 的参数的步长
+    c_min: 0.001 # Minimum value of parameter for UCB
+    c_max: 1.0   # Maximum value of parameter for UCB
+    c_step: 0.001 # Step size for parameter of UCB
 
 exp3:
   dynamic_plot:
-    gamma_min: 0.001 # eta 的最小值
-    gamma_max: 1.0 # eta 的最大值
-    gamma_step: 0.001 # eta 的步长
-    gamma_default_value: 0.01 # eta 的默认值
+    gamma_min: 0.001 # Minimum value of gamma
+    gamma_max: 1.0 # Maximum value of gamma
+    gamma_step: 0.001 # Step size for gamma
+    gamma_default_value: 0.01 # Default value of gamma
 
   evaluation:
-    gamma_min: 0.001 # eta 的最小值
-    gamma_max: 1.0 # eta 的最大值
-    gamma_step: 0.005 # eta 的步长
+    gamma_min: 0.001 # Minimum value of gamma
+    gamma_max: 1.0 # Maximum value of gamma
+    gamma_step: 0.005 # Step size for gamma
 
 exp_ix:
   dynamic_plot:
-    eta_min: 0.01 # eta 的最小值
-    eta_max: 1.01 # eta 的最大值
-    eta_step: 0.01 # eta 的步长
-    eta_default_value: 0.5 # eta 的默认值
+    eta_min: 0.01 # Minimum value of eta
+    eta_max: 1.01 # Maximum value of eta
+    eta_step: 0.01 # Step size for eta
+    eta_default_value: 0.5 # Default value of eta
 
   evaluation:
-    eta_min: 0.01 # eta 的最小值
-    eta_max: 1.01 # eta 的最大值
-    eta_step: 0.01 # eta 的步长
+    eta_min: 0.01 # Minimum value of eta
+    eta_max: 1.01 # Maximum value of eta
+    eta_step: 0.01 # Step size for eta
 
 exp4:
   batch_size: 64  # Batch size
@@ -177,31 +177,31 @@ exp4:
   device: 'cuda'  # Device
   mix_precision: True  # Mixed precision training
 
-  # 早停的参数
-  patience_epochs: 6  # 'patience_epochs' 个 epoch 没有提升，就停止训练
-  min_delta: 1e-3  # 当监控指标的变化小于 min_delta 时，就视为没有提升
+  # Early stopping parameters
+  patience_epochs: 6  # Stop training if no improvement for 'patience_epochs' epochs
+  min_delta: 1e-3  # Consider no improvement if the change in the monitored metric is less than min_delta
 
-  # 调度器的参数
-  mode: 'min'  # 'min' 表示监控指标的值越小越好，'max' 表示监控指标的值越大越好
-  factor: 0.1  # 学习率调度器的缩放因子
-  patience_lr: 2  # 'patience_lr' 个 epoch 没有提升，就缩放学习率
-  min_lr: 1e-6  # 学习率的下限
-  threshold: 1e-2  # 监控指标的变化小于 threshold 时，就视为没有提升
+  # Scheduler parameters
+  mode: 'min'  # 'min' means the smaller the monitored metric, the better; 'max' means the larger the better
+  factor: 0.1  # Scaling factor for the learning rate scheduler
+  patience_lr: 2  # Scale the learning rate if no improvement for 'patience_lr' epochs
+  min_lr: 1e-6  # Lower limit of the learning rate
+  threshold: 1e-2  # Consider no improvement if the change in the monitored metric is less than threshold
 
   ARconfig:
-    order: 5  # AR 模型的阶数
+    order: 5  # Order of the AR model
 
   LSTMconfig:
-    hidden_size: 128  # LSTM 模型的隐藏层大小
-    num_layers: 4  # LSTM 模型的层数
-    dropout_prob: 0.2  # LSTM 模型的 dropout 率
-#    weight_decay: 1e-4  # LSTM 模型的权重衰减
-  #    batch_first: True  # LSTM 模型的输入是否 batch_first
+    hidden_size: 128  # Hidden layer size for the LSTM model
+    num_layers: 4  # Number of layers in the LSTM model
+    dropout_prob: 0.2  # Dropout rate for the LSTM model
+#    weight_decay: 1e-4  # Weight decay for the LSTM model
+  #    batch_first: True  # Whether the input for the LSTM model is batch_first
 
   GNNconfig:
-    hidden_size: 128  # GNN 模型的隐藏层大小
-    num_layers: 4  # GNN 模型的层数
-#    dropout: 0.2  # GNN 模型的 dropout 率
-#    batch_first: True  # GNN 模型的输入是否 batch_first
-#    num_heads: 8  # GNN 模型的头数
-#    concat: True  # GNN 模型的是否拼接多头的输出
+    hidden_size: 128  # Hidden layer size for the GNN model
+    num_layers: 4  # Number of layers in the GNN model
+#    dropout: 0.2  # Dropout rate for the GNN model
+#    batch_first: True  # Whether the input for the GNN model is batch_first
+#    num_heads: 8  # Number of heads in the GNN model
+#    concat: True  # Whether to concatenate the outputs of multiple heads in the GNN model
