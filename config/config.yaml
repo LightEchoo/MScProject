@@ -82,7 +82,7 @@ adaptive_epsilon_greedy:
     min_epsilon_default_value: 0.05 # 算法可以取到的 epsilon 的最小值的默认值
 
   evaluation:
-    init_epsilon_min: 0.0001 # epsilon 的最小值
+    init_epsilon_min: 0.05 # epsilon 的最小值
     init_epsilon_max: 0.1001 # epsilon 的最大值
     init_epsilon_step: 0.0005 # epsilon 的步长
     min_epsilon: 0.05 # 算法可以取到的 epsilon 的最小值
@@ -113,7 +113,7 @@ dynamic_adaptive_epsilon_greedy:
     percentiles_min: 50 # 阈值选取的之前的单步遗憾的百分位数的最小值
     percentiles_max: 100 # 阈值选取的之前的单步遗憾的百分位数的最大值
     percentiles_step: 1 # 阈值选取的之前的单步遗憾的百分位数的步长
-    default_init_epsilon: 0.04 # epsilon 的默认值
+    default_init_epsilon: 0.01 # epsilon 的默认值
 
 boltzmann:
   dynamic_plot:
@@ -164,7 +164,7 @@ exp_ix:
   evaluation:
     eta_min: 0.01 # eta 的最小值
     eta_max: 1.01 # eta 的最大值
-    eta_step: 0.05 # eta 的步长
+    eta_step: 0.01 # eta 的步长
 
 exp4:
   batch_size: 64  # Batch size
